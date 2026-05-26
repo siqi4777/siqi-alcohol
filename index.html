@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    <title>AR ALCOHOL F1</title>
+    <style>
+        body { margin: 0; overflow: hidden; background-color: #000; }
+        canvas { display: block; }
+    </style>
+    
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+          "@mkkellogg/gaussian-splats-3d": "https://unpkg.com/@mkkellogg/gaussian-splats-3d/build/gaussian-splats-3d.module.js"
+        }
+      }
+    </script>
+</head>
+<body>
+    <script type="module">
+        import * as THREE from 'three';
+        import * as GaussianSplats3D from '@mkkellogg/gaussian-splats-3d';
+
+        // 1. 初始化查看器
+        const viewer = new GaussianSplats3D.Viewer({
+            'cameraUp': [0, 1, 0],              // Y轴向上
+            'initialCameraPosition': [0, 2, 5], // 相机位置
+            'initialCameraLookAt': [0, 0, 0],
+            'sharedMemoryForWorkers': false     // <--- 就是新增这一行！强制关闭共享内存，绕过浏览器安全限制
+        });
+
+        // 2. 加载你的 F1.ply 文件
+        // 注意：因为 .ply 文件体积比较大，加载时会有进度条，属于正常现象
+        viewer.addSplatScene('./F1.ply', {
+            'showLoadingUI': true, // 开启加载进度条提示
+            'position': [0, 0, 0],
+            'rotation': [0, 0, 0, 1],
+            'scale': [1, 1, 1]
+        })
+        .then(() => {
+            // 3. 成功后启动渲染
+            viewer.start();
+            console.log("F1.ply 场景完美加载！");
+        })
+        .catch((error) => {
+            console.error("加载出错了，检查一下文件名对不对:", error);
+        });
+    </script>
+</body>
+</html>
