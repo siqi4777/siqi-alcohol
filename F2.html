@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    <title>AR ALCOHOL F1 · 高斯粒子控制台</title>
+    <style>
+        /* 导入指定英文字体 */
+        @font-face {
+            font-family: 'AkzidenzGrotesk-Extended';
+            src: url('AkzidenzGrotesk-Extended.otf') format('opentype');
+            font-weight: normal;
+            font-style: normal;
+        }
+        @font-face {
+            font-family: 'AkzidenzGrotesk-LightExtended';
+            src: url('AkzidenzGrotesk-LightExtended.otf') format('opentype');
+            font-weight: 300;
+            font-style: normal;
+        }
+
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #000;
+            font-family: 'AkzidenzGrotesk-LightExtended', 'Helvetica Neue', Arial, sans-serif;
+        }
+        canvas {
+            display: block;
+        }
+
+        /* UI 控制面板 — 右下角悬浮，半透明磨砂玻璃 */
+        .control-panel {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            background: rgba(20, 20, 30, 0.75);
+            backdrop-filter: blur(12px);
+            border-radius: 24px;
+            padding: 16px 20px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+            z-index: 100;
+            min-width: 220px;
+            font-family: 'AkzidenzGrotesk-Extended', monospace;
+            letter-spacing: 0.5px;
+            transition: opacity 0.3s;
+        }
+
+        /* 滑块容器 */
+        .slider-container {
+            margin-bottom: 16px;
+        }
+        .slider-container label {
+            display: block;
+            color: #fff;
+            font-size: 12px;
+            margin-bottom: 8px;
+            letter-spacing: 1px;
+            font-family: 'AkzidenzGrotesk-Extended', monospace;
+        }
+        input[type="range"] {
+            width: 100%;
+            cursor: pointer;
+            background: #2a2a3a;
+            height: 3px;
+            border-radius: 3px;
+            -webkit-appearance: none;
+        }
+        input[type="range"]:focus {
+            outline: none;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: #00d2ff;
+            cursor: pointer;
+            border: none;
+            box-shadow: 0 0 6px #00d2ff;
+        }
+        .value-display {
+            text-align: right;
+            font-size: 11px;
+            color: #ccc;
+            margin-top: 4px;
+            font-family: monospace;
+        }
+
+        /* 按钮样式 */
+        .action-btn {
+            background: rgba(0, 210, 255, 0.2);
+            border: 1px solid rgba(0, 210, 255, 0.5);
+            color: #00d2ff;
+            padding: 6px 14px;
+            border-radius: 40px;
+            font-size: 12px;
+            font-family: 'AkzidenzGrotesk-Extended', monospace;
+            letter-spacing: 0.8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            width: 100%;
+            margin-top: 8px;
+            backdrop-filter: blur(4px);
+        }
+        .action-btn:hover {
+            background: #00aaff;
+            color: #000;
+            border-color: #00aaff;
+            box-shadow: 0 0 10px rgba(0,170,255,0.5);
+        }
+
+        /* 状态指示小圆点 */
+        .status-led {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background-color: #ffaa33;
+            margin-right: 6px;
+            box-shadow: 0 0 4px #ffaa33;
+            transition: background-color 0.2s;
+        }
+        .status-led.active {
+            background-color: #00ffaa;
+            box-shadow: 0 0 6px #00ffaa;
+        }
+        .btn-text {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        /* 快捷键提示小字 */
+        .shortcut-hint {
+            font-size: 9px;
+            color: #aaa;
+            text-align: center;
+            margin-top: 10px;
+            border-top: 1px solid rgba(255,255,255,0.1);
+            padding-top: 8px;
+            font-family: monospace;
+        }
+
+        @media (max-width: 600px) {
+            .control-panel { padding: 12px 16px; min-width: 170px; bottom: 16px; right: 16px; }
+            .action-btn { font-size: 10px; padding: 5px 10px; }
+            .slider-container label { font-size: 10px; }
+        }
+    </style>
+    
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+          "@mkkellogg/gaussian-splats-3d": "https://unpkg.com/@mkkellogg/gaussian-splats-3d/build/gaussian-splats-3d.module.js"
+        }
+      }
+    </script>
+</head>
+<body>
+    <!-- UI 控制面板 -->
+    <div class="control-panel" id="controlPanel">
+        <div class="slider-container">
+            <label>🔘 CAMERA DISTANCE</label>
+            <input type="range" id="distanceSlider" min="1.5" max="12" step="0.01" value="5.0">
+            <div class="value-display" id="distanceValue">距离: 5.00</div>
+        </div>
+        <button id="autoRotateBtn" class="action-btn">
+            <span class="btn-text"><span class="status-led" id="autoLed"></span> 🧊 AUTO-ROTATE OFF</span>
+        </button>
+        <div class="shortcut-hint">💡 快捷键 <span style="color:#00d2ff;">P</span> 切换自动旋转 | 滑块控制相机距离</div>
+    </div>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import * as GaussianSplats3D from '@mkkellogg/gaussian-splats-3d';
+
+        // 1. 初始化高斯粒子查看器
+        const viewer = new GaussianSplats3D.Viewer({
+            'cameraUp': [0, 1, 0],
+            'initialCameraPosition': [0, 2, 5],
+            'initialCameraLookAt': [0, 0, 0],
+            'sharedMemoryForWorkers': false
+        });
+
+        // 用于存储相机的原始方向参考 (极坐标角度)
+        let currentAzimuth = 0;        // 水平弧度
+        let currentPolar = Math.PI / 3; // 俯仰弧度 (固定为当前值)
+        let isAutoRotating = false;
+        let autoRotateSpeed = 0.005;
+        let animationId = null;
+        let cameraDistance = 5.0;       // 与初始距离一致
+        
+        // 获取相机引用 (等待加载完成后稳定)
+        let mainCamera = null;
+        let targetPoint = new THREE.Vector3(0, 0, 0);
+        
+        // 辅助: 从相机位置反算角度 (以 targetPoint 为原点)
+        function updateAnglesFromCamera() {
+            if (!mainCamera) return;
+            const offset = new THREE.Vector3().subVectors(mainCamera.position, targetPoint);
+            const radius = offset.length();
+            cameraDistance = radius;
+            // 计算水平角 azimuth (atan2)
+            currentAzimuth = Math.atan2(offset.x, offset.z);
+            // 计算俯仰角 polar (Y轴夹角)
+            currentPolar = Math.acos(Math.min(1, Math.max(-1, offset.y / radius)));
+        }
+        
+        // 根据距离和角度重新设置相机位置
+        function updateCameraFromAngles() {
+            if (!mainCamera) return;
+            const x = cameraDistance * Math.sin(currentPolar) * Math.sin(currentAzimuth);
+            const z = cameraDistance * Math.sin(currentPolar) * Math.cos(currentAzimuth);
+            const y = cameraDistance * Math.cos(currentPolar);
+            mainCamera.position.set(x, y, z);
+            mainCamera.lookAt(targetPoint);
+            // 同步高斯查看器内部的相机矩阵 (强制更新)
+            if (viewer && viewer.camera) {
+                viewer.camera.position.copy(mainCamera.position);
+                viewer.camera.lookAt(targetPoint);
+            }
+        }
+        
+        // 设置相机距离 (外部滑块调用)
+        function setCameraDistance(dist) {
+            if (!mainCamera) return;
+            cameraDistance = Math.min(12, Math.max(1.5, dist));
+            updateCameraFromAngles();
+            document.getElementById('distanceValue').innerText = `距离: ${cameraDistance.toFixed(2)}`;
+        }
+        
+        // 加载粒子场景
+        viewer.addSplatScene('./F2.ply', {
+            'showLoadingUI': true,
+            'position': [0, 0, 0],
+            'rotation': [0, 0, 0, 1],
+            'scale': [1, 1, 1]
+        })
+        .then(() => {
+            viewer.start();
+            console.log("F1.ply 场景完美加载！");
+            
+            // 获取高斯渲染器内部的相机 (viewer.camera 在 start 后可用)
+            mainCamera = viewer.camera;
+            if (mainCamera) {
+                // 初始化角度 (基于当前相机位置)
+                targetPoint.set(0, 0, 0);
+                updateAnglesFromCamera();
+                // 同步滑块显示
+                document.getElementById('distanceSlider').value = cameraDistance;
+                document.getElementById('distanceValue').innerText = `距离: ${cameraDistance.toFixed(2)}`;
+            } else {
+                console.warn("未能获取到相机对象，将使用轮询");
+                // 降级: 每隔100ms尝试获取相机
+                const interval = setInterval(() => {
+                    if (viewer.camera) {
+                        mainCamera = viewer.camera;
+                        targetPoint.set(0, 0, 0);
+                        updateAnglesFromCamera();
+                        document.getElementById('distanceSlider').value = cameraDistance;
+                        document.getElementById('distanceValue').innerText = `距离: ${cameraDistance.toFixed(2)}`;
+                        clearInterval(interval);
+                    }
+                }, 100);
+            }
+        })
+        .catch((error) => {
+            console.error("加载出错了，检查一下文件名对不对:", error);
+            const panel = document.getElementById('controlPanel');
+            if (panel) panel.style.opacity = '0.5';
+        });
+        
+        // --- UI 事件绑定 ---
+        const distanceSlider = document.getElementById('distanceSlider');
+        const autoRotateBtn = document.getElementById('autoRotateBtn');
+        const autoLed = document.getElementById('autoLed');
+        
+        distanceSlider.addEventListener('input', (e) => {
+            const val = parseFloat(e.target.value);
+            setCameraDistance(val);
+        });
+        
+        // 切换自动旋转
+        function toggleAutoRotate() {
+            isAutoRotating = !isAutoRotating;
+            if (isAutoRotating) {
+                autoLed.classList.add('active');
+                autoRotateBtn.innerHTML = '<span class="btn-text"><span class="status-led active"></span> 🔄 AUTO-ROTATE ON</span>';
+                startAutoRotateLoop();
+            } else {
+                autoLed.classList.remove('active');
+                autoRotateBtn.innerHTML = '<span class="btn-text"><span class="status-led"></span> 🧊 AUTO-ROTATE OFF</span>';
+                if (animationId) {
+                    cancelAnimationFrame(animationId);
+                    animationId = null;
+                }
+            }
+        }
+        
+        function startAutoRotateLoop() {
+            if (animationId) cancelAnimationFrame(animationId);
+            function rotateStep() {
+                if (!isAutoRotating) return;
+                if (mainCamera) {
+                    // 累加水平角，保持俯仰不变
+                    currentAzimuth += autoRotateSpeed;
+                    updateCameraFromAngles();
+                }
+                animationId = requestAnimationFrame(rotateStep);
+            }
+            rotateStep();
+        }
+        
+        autoRotateBtn.addEventListener('click', toggleAutoRotate);
+        
+        // 监听键盘 P 键
+        window.addEventListener('keydown', (e) => {
+            if (e.code === 'KeyP') {
+                e.preventDefault();
+                toggleAutoRotate();
+            }
+        });
+        
+        // 可选: 让高斯场景本身的渲染循环不冲突，无需额外操作，viewer 已有自己的 requestAnimationFrame
+        // 但注意我们的自动旋转会同时修改相机位置，这不会与 viewer 内部冲突，因为我们直接操作同一相机。
+        
+        // 辅助: 当用户用鼠标拖拽时 (高斯场景内部有轨道控制) 需要更新我们的角度记录，避免跳跃
+        // 因为高斯粒子库内部使用了 OrbitControls，所以我们无法直接拦截。但为了滑块和自动旋转不抢位，
+        // 我们在每帧或者定期从相机位置反算角度，这样滑块/自动旋转改动后，用户拖拽仍能同步。
+        function syncAnglesFromCamera() {
+            if (!mainCamera || isAutoRotating) return; // 自动旋转时不需要同步，否则会打架
+            const offset = new THREE.Vector3().subVectors(mainCamera.position, targetPoint);
+            const newDist = offset.length();
+            if (Math.abs(newDist - cameraDistance) > 0.01) {
+                cameraDistance = newDist;
+                distanceSlider.value = cameraDistance;
+                document.getElementById('distanceValue').innerText = `距离: ${cameraDistance.toFixed(2)}`;
+            }
+            // 更新角度 (用于自动旋转恢复)
+            currentAzimuth = Math.atan2(offset.x, offset.z);
+            currentPolar = Math.acos(Math.min(1, Math.max(-1, offset.y / newDist)));
+        }
+        
+        // 周期性同步 (每帧检查，不干扰性能)
+        let lastSync = 0;
+        function syncLoop() {
+            requestAnimationFrame(syncLoop);
+            if (mainCamera && !isAutoRotating) {
+                syncAnglesFromCamera();
+            }
+        }
+        syncLoop();
+        
+        // 优雅处理窗口大小变化 (高斯查看器内部会自适应，无需额外操作)
+        window.addEventListener('resize', () => {
+            if (viewer && viewer.camera) {
+                viewer.camera.aspect = window.innerWidth / window.innerHeight;
+                viewer.camera.updateProjectionMatrix();
+            }
+        });
+        
+        console.log("UI控制面板已加载 | 滑块控制距离 | P键 / 按钮切换自动旋转");
+    </script>
+</body>
+</html>
