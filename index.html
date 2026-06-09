@@ -143,6 +143,32 @@
             font-family: monospace;
         }
 
+/* 覆盖并美化内置的 VR 按钮，使其适配控制台的赛博朋克视觉风格 */
+        #VRButton {
+            background: rgba(0, 210, 255, 0.15) !important;
+            border: 1px solid rgba(0, 210, 255, 0.5) !important;
+            color: #00d2ff !important;
+            backdrop-filter: blur(12px) !important;
+            border-radius: 40px !important;
+            font-family: 'AkzidenzGrotesk-Extended', monospace !important;
+            letter-spacing: 0.8px !important;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4) !important;
+            transition: all 0.2s ease !important;
+            
+            /* 将其调整到你喜欢的位置，例如左下角悬浮 */
+            bottom: 24px !important;
+            left: 24px !important;
+            padding: 12px 24px !important;
+            font-size: 13px !important;
+        }
+        #VRButton:hover {
+            background: #00aaff !important;
+            color: #000 !important;
+            border-color: #00aaff !important;
+            box-shadow: 0 0 15px rgba(0,170,255,0.6) !important;
+            opacity: 1 !important;
+        }
+
         @media (max-width: 600px) {
             .control-panel { padding: 12px 16px; min-width: 170px; bottom: 16px; right: 16px; }
             .action-btn { font-size: 10px; padding: 5px 10px; }
@@ -182,7 +208,8 @@
             'cameraUp': [0, 1, 0],
             'initialCameraPosition': [0, 2, 5],
             'initialCameraLookAt': [0, 0, 0],
-            'sharedMemoryForWorkers': false
+            'sharedMemoryForWorkers': false,
+            'webXRMode': GaussianSplats3D.WebXRMode.VR // 👈 新增这一行，开启内置的 VR 视角按钮支持
         });
 
         // 用于存储相机的原始方向参考 (极坐标角度)
