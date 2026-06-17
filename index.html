@@ -497,6 +497,8 @@
         }
         
         function updateCameraFromAngles() {
+            if (window.isVRMode) return; // 👈 加上这行：进入VR后，原来的自动旋转就不会抢镜头了
+            
             if (!mainCamera) return;
             const x = cameraDistance * Math.sin(currentPolar) * Math.sin(currentAzimuth);
             const z = cameraDistance * Math.sin(currentPolar) * Math.cos(currentAzimuth);
