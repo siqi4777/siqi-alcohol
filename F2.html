@@ -154,13 +154,13 @@
       {
         "imports": {
           "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+          "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/",
           "@mkkellogg/gaussian-splats-3d": "https://unpkg.com/@mkkellogg/gaussian-splats-3d/build/gaussian-splats-3d.module.js"
         }
       }
     </script>
 </head>
 <body>
-    <!-- UI 控制面板 -->
     <div class="control-panel" id="controlPanel">
         <div class="slider-container">
             <label>🔘 CAMERA DISTANCE</label>
@@ -175,6 +175,7 @@
 
     <script type="module">
         import * as THREE from 'three';
+        import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
         import * as GaussianSplats3D from '@mkkellogg/gaussian-splats-3d';
 
         // 1. 初始化高斯粒子查看器
@@ -239,22 +240,56 @@
             'rotation': [0, 0, 0, 1],
             'scale': [1, 1, 1]
         })
-        .then(() => {
+       .then(() => {
             viewer.start();
-            console.log("F1.ply 场景完美加载！");
+            console.log("F2.ply 场景完美加载！");
+
+            // ✨ 【核心修复】：动态获取底层的 Three.js Scene 对象
+            let targetScene = viewer.scene;
+            if (!targetScene && viewer.splatMesh) {
+                targetScene = viewer.splatMesh.parent; // 顺藤摸瓜获取真实的场景容器
+            }
+
+            // 如果还是找不到场景，输出错误提示防止崩溃
+            if (!targetScene) {
+                console.error("❌ 未能获取到 Three.js Scene 对象，请检查 viewer 属性！");
+                return;
+            }
+
+            // 1. 使用获取到的 targetScene 添加环境光和主光源
+            const ambientLight = new THREE.AmbientLight(0xffffff, 1.5); 
+            targetScene.add(ambientLight);
             
-            // 获取高斯渲染器内部的相机 (viewer.camera 在 start 后可用)
+            const dirLight = new THREE.DirectionalLight(0xffffff, 1.2); 
+            dirLight.position.set(3, 6, 4);
+            targetScene.add(dirLight);
+
+            // 2. 载入气泡酒杯.glb 放入场景
+            const gltfLoader = new GLTFLoader();
+            gltfLoader.load('./气泡酒杯.glb', (gltf) => {
+                const model = gltf.scene;
+                
+                // 如果放进去后还是看不到，可以把 0, 0, 0 改为 0, 1.0, 0 往上提一提
+                model.position.set(0, 0, 0); 
+                
+                // 这里可以控制大小 (1.0 为原始大小，若太小可改为 2.0 或 5.0 放大)
+                model.scale.set(1.0, 1.0, 1.0); 
+                
+                targetScene.add(model);
+                console.log("👉 气泡酒杯.glb 已成功放置在场景中！");
+            }, undefined, (error) => {
+                console.error("加载 GLB 模型失败，请检查文件名或路径:", error);
+            });
+            
+            // 后续的相机获取和初始化代码保持不变...
             mainCamera = viewer.camera;
             if (mainCamera) {
-                // 初始化角度 (基于当前相机位置)
                 targetPoint.set(0, 0, 0);
                 updateAnglesFromCamera();
-                // 同步滑块显示
                 document.getElementById('distanceSlider').value = cameraDistance;
                 document.getElementById('distanceValue').innerText = `距离: ${cameraDistance.toFixed(2)}`;
             } else {
                 console.warn("未能获取到相机对象，将使用轮询");
-                // 降级: 每隔100ms尝试获取相机
                 const interval = setInterval(() => {
                     if (viewer.camera) {
                         mainCamera = viewer.camera;
@@ -324,14 +359,9 @@
             }
         });
         
-        // 可选: 让高斯场景本身的渲染循环不冲突，无需额外操作，viewer 已有自己的 requestAnimationFrame
-        // 但注意我们的自动旋转会同时修改相机位置，这不会与 viewer 内部冲突，因为我们直接操作同一相机。
-        
-        // 辅助: 当用户用鼠标拖拽时 (高斯场景内部有轨道控制) 需要更新我们的角度记录，避免跳跃
-        // 因为高斯粒子库内部使用了 OrbitControls，所以我们无法直接拦截。但为了滑块和自动旋转不抢位，
-        // 我们在每帧或者定期从相机位置反算角度，这样滑块/自动旋转改动后，用户拖拽仍能同步。
+        // 辅助: 当用户用鼠标拖拽时更新我们的角度记录
         function syncAnglesFromCamera() {
-            if (!mainCamera || isAutoRotating) return; // 自动旋转时不需要同步，否则会打架
+            if (!mainCamera || isAutoRotating) return; 
             const offset = new THREE.Vector3().subVectors(mainCamera.position, targetPoint);
             const newDist = offset.length();
             if (Math.abs(newDist - cameraDistance) > 0.01) {
@@ -339,13 +369,11 @@
                 distanceSlider.value = cameraDistance;
                 document.getElementById('distanceValue').innerText = `距离: ${cameraDistance.toFixed(2)}`;
             }
-            // 更新角度 (用于自动旋转恢复)
             currentAzimuth = Math.atan2(offset.x, offset.z);
             currentPolar = Math.acos(Math.min(1, Math.max(-1, offset.y / newDist)));
         }
         
-        // 周期性同步 (每帧检查，不干扰性能)
-        let lastSync = 0;
+        // 周期性同步
         function syncLoop() {
             requestAnimationFrame(syncLoop);
             if (mainCamera && !isAutoRotating) {
@@ -354,7 +382,7 @@
         }
         syncLoop();
         
-        // 优雅处理窗口大小变化 (高斯查看器内部会自适应，无需额外操作)
+        // 处理窗口大小变化
         window.addEventListener('resize', () => {
             if (viewer && viewer.camera) {
                 viewer.camera.aspect = window.innerWidth / window.innerHeight;

@@ -1,10 +1,9 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="en">
 <head>
     <meta charset="utf-8">
-    <title>AR ALCOHOL F1 · 高斯粒子控制台</title>
+    <title>AR ALCOHOL F1 · Gaussian Splat Console</title>
     <style>
-        /* 导入指定英文字体 */
         @font-face {
             font-family: 'AkzidenzGrotesk-Extended';
             src: url('AkzidenzGrotesk-Extended.otf') format('opentype');
@@ -28,31 +27,68 @@
             display: block;
         }
 
-        /* UI 控制面板 — 右下角悬浮，半透明磨砂玻璃 */
-        .control-panel {
+        .control-panel-wrapper {
             position: fixed;
             bottom: 24px;
             right: 24px;
-            background: rgba(20, 20, 30, 0.75);
-            backdrop-filter: blur(12px);
+            z-index: 100;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+        }
+
+        .control-panel {
+            background: rgba(20, 20, 30, 0.4);
+            backdrop-filter: blur(4px);
             border-radius: 24px;
             padding: 16px 20px;
             border: 1px solid rgba(255, 255, 255, 0.2);
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
-            z-index: 100;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6);
             min-width: 220px;
             font-family: 'AkzidenzGrotesk-Extended', monospace;
             letter-spacing: 0.5px;
-            transition: opacity 0.3s;
+            transition: opacity 0.3s, transform 0.3s, max-height 0.3s;
+            user-select: none;
+            max-height: 600px;
+            overflow: hidden;
+            transform-origin: bottom right;
+        }
+        .control-panel.collapsed {
+            max-height: 0;
+            padding: 0 20px;
+            opacity: 0;
+            transform: scale(0.95);
+            border-width: 0;
+            pointer-events: none;
         }
 
-        /* 滑块容器 */
+        .panel-toggle-btn {
+            background: rgba(20, 20, 30, 0.45);
+            backdrop-filter: blur(4px);
+            border: 1px solid rgba(255, 255, 255, 0.25);
+            color: #ccc;
+            padding: 6px 16px;
+            border-radius: 40px;
+            font-size: 12px;
+            font-family: 'AkzidenzGrotesk-Extended', monospace;
+            letter-spacing: 0.8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            margin-bottom: 8px;
+            touch-action: manipulation;
+        }
+        .panel-toggle-btn:hover {
+            background: rgba(255, 255, 255, 0.15);
+            color: #fff;
+            border-color: rgba(255, 255, 255, 0.5);
+        }
+
         .slider-container {
             margin-bottom: 16px;
         }
         .slider-container label {
             display: block;
-            color: #fff;
+            color: #eee;
             font-size: 12px;
             margin-bottom: 8px;
             letter-spacing: 1px;
@@ -82,16 +118,15 @@
         .value-display {
             text-align: right;
             font-size: 11px;
-            color: #ccc;
+            color: #aaa;
             margin-top: 4px;
             font-family: monospace;
         }
 
-        /* 按钮样式 */
         .action-btn {
-            background: rgba(0, 210, 255, 0.2);
-            border: 1px solid rgba(0, 210, 255, 0.5);
-            color: #00d2ff;
+            background: rgba(0, 210, 255, 0.15);
+            border: 1px solid rgba(0, 210, 255, 0.4);
+            color: #88ddff;
             padding: 6px 14px;
             border-radius: 40px;
             font-size: 12px;
@@ -102,6 +137,7 @@
             width: 100%;
             margin-top: 8px;
             backdrop-filter: blur(4px);
+            touch-action: manipulation;
         }
         .action-btn:hover {
             background: #00aaff;
@@ -109,22 +145,75 @@
             border-color: #00aaff;
             box-shadow: 0 0 10px rgba(0,170,255,0.5);
         }
+        .action-btn:active {
+            transform: scale(0.96);
+        }
 
-        /* 状态指示小圆点 */
+        .btn-group {
+            display: flex;
+            gap: 8px;
+            margin-top: 8px;
+        }
+        .btn-group .action-btn {
+            flex: 1;
+            margin-top: 0;
+            text-align: center;
+            padding: 8px 6px;
+            font-size: 11px;
+            transition: background 0.15s, transform 0.1s, border-color 0.2s, box-shadow 0.2s;
+            letter-spacing: 0.5px;
+        }
+        .btn-group .action-btn:active {
+            transform: scale(0.94);
+        }
+        .btn-group .action-btn.view-btn {
+            flex: 0.65;
+            min-width: 52px;
+        }
+
+        /* Pressed states - pink/purple/blue palette */
+        .action-btn.pressed-spread {
+            background: rgba(200, 80, 255, 0.4);
+            border-color: #c850ff;
+            box-shadow: 0 0 20px rgba(200, 80, 255, 0.3);
+            color: #e8b0ff;
+        }
+        .action-btn.pressed-view {
+            background: rgba(255, 100, 180, 0.4);
+            border-color: #ff64b4;
+            box-shadow: 0 0 20px rgba(255, 100, 180, 0.3);
+            color: #ffb0d8;
+        }
+        .action-btn.pressed-tighten {
+            background: rgba(80, 180, 255, 0.4);
+            border-color: #50b4ff;
+            box-shadow: 0 0 20px rgba(80, 180, 255, 0.3);
+            color: #b0dcff;
+        }
+
+        /* Auto-rotate ON state - using pink, much more visible */
+        .action-btn.pressed-rotate {
+            background: rgba(255, 100, 180, 0.35);
+            border-color: #ff64b4;
+            box-shadow: 0 0 20px rgba(255, 100, 180, 0.35);
+            color: #ffb0d8;
+        }
+
         .status-led {
             display: inline-block;
             width: 8px;
             height: 8px;
             border-radius: 50%;
-            background-color: #ffaa33;
+            background-color: #888;
             margin-right: 6px;
-            box-shadow: 0 0 4px #ffaa33;
-            transition: background-color 0.2s;
+            box-shadow: none;
+            transition: background-color 0.2s, box-shadow 0.2s;
         }
         .status-led.active {
-            background-color: #00ffaa;
-            box-shadow: 0 0 6px #00ffaa;
+            background-color: #cc77ff;
+            box-shadow: 0 0 12px #cc77ff, 0 0 24px rgba(170, 102, 255, 0.3);
         }
+
         .btn-text {
             display: flex;
             align-items: center;
@@ -132,47 +221,85 @@
             gap: 8px;
         }
 
-        /* 快捷键提示小字 */
-        .shortcut-hint {
-            font-size: 9px;
-            color: #aaa;
+        .keyboard-hint {
+            font-size: 10px;
+            color: #999;
             text-align: center;
             margin-top: 10px;
-            border-top: 1px solid rgba(255,255,255,0.1);
-            padding-top: 8px;
+            border-top: 1px solid rgba(255,255,255,0.08);
+            padding-top: 10px;
             font-family: monospace;
+            letter-spacing: 0.5px;
+            line-height: 1.8;
+        }
+        .keyboard-hint span.highlight {
+            color: #cc99ff;
+            font-weight: bold;
+        }
+        .keyboard-hint span.key {
+            color: #88ddff;
+            font-weight: bold;
         }
 
-/* 覆盖并美化内置的 VR 按钮，使其适配控制台的赛博朋克视觉风格 */
-        #VRButton {
-            background: rgba(0, 210, 255, 0.15) !important;
-            border: 1px solid rgba(0, 210, 255, 0.5) !important;
-            color: #00d2ff !important;
-            backdrop-filter: blur(12px) !important;
-            border-radius: 40px !important;
-            font-family: 'AkzidenzGrotesk-Extended', monospace !important;
-            letter-spacing: 0.8px !important;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4) !important;
-            transition: all 0.2s ease !important;
-            
-            /* 将其调整到你喜欢的位置，例如左下角悬浮 */
-            bottom: 24px !important;
-            left: 24px !important;
-            padding: 12px 24px !important;
-            font-size: 13px !important;
+/* --- 打字机特效样式 --- */
+        .intro-text-container {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 80%;
+            max-width: 800px;
+            text-align: center;
+            color: rgba(255, 255, 255, 0.9);
+            /* 使用你原有的字体 */
+            font-family: 'AkzidenzGrotesk-LightExtended', 'Helvetica Neue', Arial, sans-serif;
+            font-size: 18px;
+            line-height: 1.8;
+            letter-spacing: 1px;
+            z-index: 1000;
+            /* 确保文字不会阻挡用户的鼠标/触摸拖拽操作 */
+            pointer-events: none; 
+            opacity: 1;
+            /* 渐渐消失的过渡动画时长设为 2秒 */
+            transition: opacity 2s ease-in-out;
+            text-shadow: 0 4px 15px rgba(0,0,0,0.9);
         }
-        #VRButton:hover {
-            background: #00aaff !important;
-            color: #000 !important;
-            border-color: #00aaff !important;
-            box-shadow: 0 0 15px rgba(0,170,255,0.6) !important;
-            opacity: 1 !important;
+
+        /* 消失状态的类名 */
+        .intro-text-container.fade-out {
+            opacity: 0;
+        }
+
+        /* 打字机光标特效 */
+        .intro-text-container::after {
+            content: '|';
+            animation: blink 0.8s step-end infinite;
+            margin-left: 4px;
+            color: #00d2ff; /* 光标颜色，和你的面板UI呼应 */
+        }
+        /* 打字完成后隐藏光标 */
+        .intro-text-container.hide-cursor::after {
+            display: none;
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0; }
         }
 
         @media (max-width: 600px) {
-            .control-panel { padding: 12px 16px; min-width: 170px; bottom: 16px; right: 16px; }
+            .intro-text-container { font-size: 13px; width: 90%; }
+        }
+
+        @media (max-width: 600px) {
+            .control-panel { padding: 12px 16px; min-width: 170px; }
             .action-btn { font-size: 10px; padding: 5px 10px; }
             .slider-container label { font-size: 10px; }
+            .btn-group { gap: 6px; }
+            .btn-group .action-btn { font-size: 10px; padding: 6px 4px; letter-spacing: 0.3px; }
+            .btn-group .action-btn.view-btn { flex: 0.7; min-width: 40px; }
+            .control-panel-wrapper { bottom: 16px; right: 16px; }
+            .keyboard-hint { font-size: 9px; }
         }
     </style>
     
@@ -186,57 +313,76 @@
     </script>
 </head>
 <body>
-    <!-- UI 控制面板 -->
-    <div class="control-panel" id="controlPanel">
-        <div class="slider-container">
-            <label>🔘 CAMERA DISTANCE</label>
-            <input type="range" id="distanceSlider" min="1.5" max="12" step="0.01" value="5.0">
-            <div class="value-display" id="distanceValue">距离: 5.00</div>
+    <div id="introTextContainer" class="intro-text-container"></div>
+    <div class="control-panel-wrapper">
+        <button id="panelToggleBtn" class="panel-toggle-btn">▸ SHOW CONTROLS</button>
+
+        <div class="control-panel" id="controlPanel">
+            <div class="slider-container">
+                <label>◉ CAMERA DISTANCE</label>
+                <input type="range" id="distanceSlider" min="1.5" max="12" step="0.01" value="5.0">
+                <div class="value-display" id="distanceValue">DIST: 5.00</div>
+            </div>
+
+            <div class="slider-container">
+                <label>◈ ROTATION SPEED</label>
+                <input type="range" id="speedSlider" min="0.001" max="0.02" step="0.001" value="0.005">
+                <div class="value-display" id="speedValue">SPEED: 0.005</div>
+            </div>
+
+            <div style="margin-bottom: 12px;">
+                <label style="color:#eee; font-size:12px; letter-spacing:1px; display:block; margin-bottom:6px;">✦ CONTROLS</label>
+                <div class="btn-group">
+                    <button id="bloomMinusBtn" class="action-btn" data-code="Minus">⊖ SPREAD</button>
+                    <button id="viewToggleBtn" class="action-btn view-btn">VIEW</button>
+                    <button id="bloomPlusBtn" class="action-btn" data-code="Equal">⊕ TIGHTEN</button>
+                </div>
+                <div class="value-display" style="margin-top:4px; font-size:10px; color:#777;">hold SPREAD/TIGHTEN for continuous effect</div>
+            </div>
+
+            <button id="autoRotateBtn" class="action-btn">
+    <span class="btn-text">
+        <span id="statusLed" class="status-led active"></span> 
+        <span id="rotateBtnText">⟳ AUTO-ROTATE ON</span>
+    </span>
+</button>
+
+            <div class="keyboard-hint">
+                <span class="highlight">⌨️</span> &nbsp;<span class="key">+</span> / <span class="key">−</span> = spread / tighten &nbsp;·&nbsp; <span class="key">P</span> = view toggle
+            </div>
         </div>
-        <button id="autoRotateBtn" class="action-btn">
-            <span class="btn-text"><span class="status-led" id="autoLed"></span> 🧊 AUTO-ROTATE OFF</span>
-        </button>
-        <div class="shortcut-hint">💡 快捷键 <span style="color:#00d2ff;">P</span> 切换自动旋转 | 滑块控制相机距离</div>
     </div>
 
     <script type="module">
         import * as THREE from 'three';
         import * as GaussianSplats3D from '@mkkellogg/gaussian-splats-3d';
 
-        // 1. 初始化高斯粒子查看器
         const viewer = new GaussianSplats3D.Viewer({
             'cameraUp': [0, 1, 0],
             'initialCameraPosition': [0, 2, 5],
             'initialCameraLookAt': [0, 0, 0],
-            'sharedMemoryForWorkers': false,
-            'webXRMode': GaussianSplats3D.WebXRMode.VR // 👈 新增这一行，开启内置的 VR 视角按钮支持
+            'sharedMemoryForWorkers': false
         });
 
-        // 用于存储相机的原始方向参考 (极坐标角度)
-        let currentAzimuth = 0;        // 水平弧度
-        let currentPolar = Math.PI / 3; // 俯仰弧度 (固定为当前值)
-        let isAutoRotating = false;
+        let currentAzimuth = 0;
+        let currentPolar = Math.PI / 3;
+        let isAutoRotating = true;
         let autoRotateSpeed = 0.005;
         let animationId = null;
-        let cameraDistance = 5.0;       // 与初始距离一致
+        let cameraDistance = 5.0;
         
-        // 获取相机引用 (等待加载完成后稳定)
         let mainCamera = null;
         let targetPoint = new THREE.Vector3(0, 0, 0);
         
-        // 辅助: 从相机位置反算角度 (以 targetPoint 为原点)
         function updateAnglesFromCamera() {
             if (!mainCamera) return;
             const offset = new THREE.Vector3().subVectors(mainCamera.position, targetPoint);
             const radius = offset.length();
             cameraDistance = radius;
-            // 计算水平角 azimuth (atan2)
             currentAzimuth = Math.atan2(offset.x, offset.z);
-            // 计算俯仰角 polar (Y轴夹角)
             currentPolar = Math.acos(Math.min(1, Math.max(-1, offset.y / radius)));
         }
         
-        // 根据距离和角度重新设置相机位置
         function updateCameraFromAngles() {
             if (!mainCamera) return;
             const x = cameraDistance * Math.sin(currentPolar) * Math.sin(currentAzimuth);
@@ -244,22 +390,70 @@
             const y = cameraDistance * Math.cos(currentPolar);
             mainCamera.position.set(x, y, z);
             mainCamera.lookAt(targetPoint);
-            // 同步高斯查看器内部的相机矩阵 (强制更新)
             if (viewer && viewer.camera) {
                 viewer.camera.position.copy(mainCamera.position);
                 viewer.camera.lookAt(targetPoint);
             }
         }
         
-        // 设置相机距离 (外部滑块调用)
         function setCameraDistance(dist) {
             if (!mainCamera) return;
             cameraDistance = Math.min(12, Math.max(1.5, dist));
             updateCameraFromAngles();
-            document.getElementById('distanceValue').innerText = `距离: ${cameraDistance.toFixed(2)}`;
+            document.getElementById('distanceValue').innerText = `DIST: ${cameraDistance.toFixed(2)}`;
         }
-        
-        // 加载粒子场景
+
+        function simulateKeyPress(code) {
+            const event = new KeyboardEvent('keydown', {
+                code: code,
+                key: code === 'Minus' ? '-' : (code === 'Equal' ? '+' : ''),
+                bubbles: true,
+                cancelable: true
+            });
+            document.dispatchEvent(event);
+        }
+
+        function simulateKeyP() {
+            const event = new KeyboardEvent('keydown', {
+                code: 'KeyP',
+                key: 'p',
+                bubbles: true,
+                cancelable: true
+            });
+            document.dispatchEvent(event);
+        }
+
+        function setupHoldButton(btn, code, pressedClass) {
+            let holdInterval = null;
+            let holdTimeout = null;
+
+            const startHold = () => {
+                simulateKeyPress(code);
+                btn.classList.add(pressedClass);
+
+                holdTimeout = setTimeout(() => {
+                    holdInterval = setInterval(() => {
+                        simulateKeyPress(code);
+                    }, 80);
+                }, 200);
+            };
+
+            const endHold = () => {
+                clearTimeout(holdTimeout);
+                clearInterval(holdInterval);
+                holdInterval = null;
+                holdTimeout = null;
+                btn.classList.remove(pressedClass);
+            };
+
+            btn.addEventListener('mousedown', (e) => { e.preventDefault(); startHold(); });
+            btn.addEventListener('mouseup', endHold);
+            btn.addEventListener('mouseleave', endHold);
+            btn.addEventListener('touchstart', (e) => { e.preventDefault(); startHold(); }, { passive: false });
+            btn.addEventListener('touchend', (e) => { e.preventDefault(); endHold(); }, { passive: false });
+            btn.addEventListener('touchcancel', endHold);
+        }
+
         viewer.addSplatScene('./F1.ply', {
             'showLoadingUI': true,
             'position': [0, 0, 0],
@@ -268,63 +462,99 @@
         })
         .then(() => {
             viewer.start();
-            console.log("F1.ply 场景完美加载！");
+            console.log("F1.ply loaded successfully!");
             
-            // 获取高斯渲染器内部的相机 (viewer.camera 在 start 后可用)
             mainCamera = viewer.camera;
             if (mainCamera) {
-                // 初始化角度 (基于当前相机位置)
                 targetPoint.set(0, 0, 0);
                 updateAnglesFromCamera();
-                // 同步滑块显示
                 document.getElementById('distanceSlider').value = cameraDistance;
-                document.getElementById('distanceValue').innerText = `距离: ${cameraDistance.toFixed(2)}`;
+                document.getElementById('distanceValue').innerText = `DIST: ${cameraDistance.toFixed(2)}`;
+                startAutoRotateLoop();
+                updateAutoRotateUI();
             } else {
-                console.warn("未能获取到相机对象，将使用轮询");
-                // 降级: 每隔100ms尝试获取相机
                 const interval = setInterval(() => {
                     if (viewer.camera) {
                         mainCamera = viewer.camera;
                         targetPoint.set(0, 0, 0);
                         updateAnglesFromCamera();
                         document.getElementById('distanceSlider').value = cameraDistance;
-                        document.getElementById('distanceValue').innerText = `距离: ${cameraDistance.toFixed(2)}`;
+                        document.getElementById('distanceValue').innerText = `DIST: ${cameraDistance.toFixed(2)}`;
+                        startAutoRotateLoop();
+                        updateAutoRotateUI();
                         clearInterval(interval);
                     }
                 }, 100);
             }
         })
         .catch((error) => {
-            console.error("加载出错了，检查一下文件名对不对:", error);
+            console.error("Load error - check file name:", error);
             const panel = document.getElementById('controlPanel');
             if (panel) panel.style.opacity = '0.5';
         });
         
-        // --- UI 事件绑定 ---
         const distanceSlider = document.getElementById('distanceSlider');
-        const autoRotateBtn = document.getElementById('autoRotateBtn');
-        const autoLed = document.getElementById('autoLed');
+        const speedSlider = document.getElementById('speedSlider');
+        const speedValue = document.getElementById('speedValue');
         
         distanceSlider.addEventListener('input', (e) => {
             const val = parseFloat(e.target.value);
             setCameraDistance(val);
         });
+
+        speedSlider.addEventListener('input', (e) => {
+            autoRotateSpeed = parseFloat(e.target.value);
+            speedValue.innerText = `SPEED: ${autoRotateSpeed.toFixed(3)}`;
+        });
         
-        // 切换自动旋转
+        const bloomMinus = document.getElementById('bloomMinusBtn');
+        const bloomPlus = document.getElementById('bloomPlusBtn');
+        setupHoldButton(bloomMinus, 'Minus', 'pressed-spread');
+        setupHoldButton(bloomPlus, 'Equal', 'pressed-tighten');
+
+        const viewToggleBtn = document.getElementById('viewToggleBtn');
+        let viewState = false;
+        
+        viewToggleBtn.addEventListener('click', () => {
+            viewState = !viewState;
+            simulateKeyP();
+            if (viewState) {
+                viewToggleBtn.classList.add('pressed-view');
+            } else {
+                viewToggleBtn.classList.remove('pressed-view');
+            }
+        });
+
+        const autoRotateBtn = document.getElementById('autoRotateBtn');
+        const autoLed = document.getElementById('autoLed');
+
+       function updateAutoRotateUI() {
+    const statusLed = document.getElementById('statusLed');
+    const rotateBtnText = document.getElementById('rotateBtnText');
+    const autoRotateBtn = document.getElementById('autoRotateBtn');
+
+    if (isAutoRotating) {
+        statusLed.classList.add('active');
+        rotateBtnText.innerText = '⟳ AUTO-ROTATE ON';
+        autoRotateBtn.classList.add('pressed-rotate'); // 保持高亮状态
+    } else {
+        statusLed.classList.remove('active');
+        rotateBtnText.innerText = '⟳ AUTO-ROTATE OFF';
+        autoRotateBtn.classList.remove('pressed-rotate'); // 移除高亮
+    }
+}
+
         function toggleAutoRotate() {
             isAutoRotating = !isAutoRotating;
             if (isAutoRotating) {
-                autoLed.classList.add('active');
-                autoRotateBtn.innerHTML = '<span class="btn-text"><span class="status-led active"></span> 🔄 AUTO-ROTATE ON</span>';
                 startAutoRotateLoop();
             } else {
-                autoLed.classList.remove('active');
-                autoRotateBtn.innerHTML = '<span class="btn-text"><span class="status-led"></span> 🧊 AUTO-ROTATE OFF</span>';
                 if (animationId) {
                     cancelAnimationFrame(animationId);
                     animationId = null;
                 }
             }
+            updateAutoRotateUI();
         }
         
         function startAutoRotateLoop() {
@@ -332,7 +562,6 @@
             function rotateStep() {
                 if (!isAutoRotating) return;
                 if (mainCamera) {
-                    // 累加水平角，保持俯仰不变
                     currentAzimuth += autoRotateSpeed;
                     updateCameraFromAngles();
                 }
@@ -342,37 +571,20 @@
         }
         
         autoRotateBtn.addEventListener('click', toggleAutoRotate);
-        
-        // 监听键盘 P 键
-        window.addEventListener('keydown', (e) => {
-            if (e.code === 'KeyP') {
-                e.preventDefault();
-                toggleAutoRotate();
-            }
-        });
-        
-        // 可选: 让高斯场景本身的渲染循环不冲突，无需额外操作，viewer 已有自己的 requestAnimationFrame
-        // 但注意我们的自动旋转会同时修改相机位置，这不会与 viewer 内部冲突，因为我们直接操作同一相机。
-        
-        // 辅助: 当用户用鼠标拖拽时 (高斯场景内部有轨道控制) 需要更新我们的角度记录，避免跳跃
-        // 因为高斯粒子库内部使用了 OrbitControls，所以我们无法直接拦截。但为了滑块和自动旋转不抢位，
-        // 我们在每帧或者定期从相机位置反算角度，这样滑块/自动旋转改动后，用户拖拽仍能同步。
+
         function syncAnglesFromCamera() {
-            if (!mainCamera || isAutoRotating) return; // 自动旋转时不需要同步，否则会打架
+            if (!mainCamera || isAutoRotating) return;
             const offset = new THREE.Vector3().subVectors(mainCamera.position, targetPoint);
             const newDist = offset.length();
             if (Math.abs(newDist - cameraDistance) > 0.01) {
                 cameraDistance = newDist;
                 distanceSlider.value = cameraDistance;
-                document.getElementById('distanceValue').innerText = `距离: ${cameraDistance.toFixed(2)}`;
+                document.getElementById('distanceValue').innerText = `DIST: ${cameraDistance.toFixed(2)}`;
             }
-            // 更新角度 (用于自动旋转恢复)
             currentAzimuth = Math.atan2(offset.x, offset.z);
             currentPolar = Math.acos(Math.min(1, Math.max(-1, offset.y / newDist)));
         }
         
-        // 周期性同步 (每帧检查，不干扰性能)
-        let lastSync = 0;
         function syncLoop() {
             requestAnimationFrame(syncLoop);
             if (mainCamera && !isAutoRotating) {
@@ -381,15 +593,53 @@
         }
         syncLoop();
         
-        // 优雅处理窗口大小变化 (高斯查看器内部会自适应，无需额外操作)
         window.addEventListener('resize', () => {
             if (viewer && viewer.camera) {
                 viewer.camera.aspect = window.innerWidth / window.innerHeight;
                 viewer.camera.updateProjectionMatrix();
             }
         });
+
+        const panelToggleBtn = document.getElementById('panelToggleBtn');
+        const controlPanel = document.getElementById('controlPanel');
+        let panelVisible = false;
+
+        panelToggleBtn.addEventListener('click', () => {
+            panelVisible = !panelVisible;
+            if (panelVisible) {
+                controlPanel.classList.remove('collapsed');
+                panelToggleBtn.textContent = '▸ HIDE CONTROLS';
+            } else {
+                controlPanel.classList.add('collapsed');
+                panelToggleBtn.textContent = '▸ SHOW CONTROLS';
+            }
+        });
+
+        controlPanel.classList.add('collapsed');
         
-        console.log("UI控制面板已加载 | 滑块控制距离 | P键 / 按钮切换自动旋转");
+        const introText = "Legend has it that the goddess Hathor is the ‘Eye of Ra’. When the sun god Ra grew old, some took advantage of the situation to pursue their own selfish ends. Upon learning of this, Ra was furious and decided to place the ‘Divine Eye’—which symbolised the sun’s majesty and fiery power—within Hathor’s body, so that she might destroy these self-serving villains.";
+
+const container = document.getElementById('introTextContainer');
+let charIndex = 0;
+
+function typeWriter() {
+    if (charIndex < introText.length) {
+        container.textContent += introText.charAt(charIndex);
+        charIndex++;
+        setTimeout(typeWriter, 40); // 40毫秒打一个字
+    } else {
+        // 打完后停顿 3 秒，然后消失
+        setTimeout(() => {
+            container.classList.add('fade-out');
+            setTimeout(() => container.remove(), 2000); // 2秒后彻底删除
+        }, 3000);
+    }
+}
+
+// 页面加载完即启动
+window.addEventListener('load', typeWriter);
+
+        console.log("✅ UI ready | Auto-rotate ON by default | Speed slider added | Collapsible panel | Pink/Purple/Blue palette");
     </script>
 </body>
 </html>
