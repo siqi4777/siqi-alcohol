@@ -281,7 +281,22 @@
         .intro-text-container.hide-cursor::after {
             display: none;
         }
-
+.final-text-container {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 80%;
+    text-align: center;
+    color: #FF008C; /* 你想要的粉色 */
+    font-size: 22px; /* 字号稍微大一点更明显 */
+    font-weight: bold;
+    text-shadow: 0 0 15px #FF008C, 0 0 30px #FF008C; /* 发光特效 */
+    opacity: 0; /* 初始透明度为0 */
+    transition: opacity 3s ease-in-out; /* 3秒缓慢显现 */
+    z-index: 1001;
+    pointer-events: none;
+}
         @keyframes blink {
             0%, 100% { opacity: 1; }
             50% { opacity: 0; }
@@ -313,7 +328,8 @@
     </script>
 </head>
 <body>
-    <div id="introTextContainer" class="intro-text-container"></div>
+<div id="introTextContainer" class="intro-text-container"></div>
+<div id="finalTextContainer" class="final-text-container"></div>
     <div class="control-panel-wrapper">
         <button id="panelToggleBtn" class="panel-toggle-btn">▸ SHOW CONTROLS</button>
 
@@ -464,6 +480,30 @@
             viewer.start();
             console.log("F1.ply loaded successfully!");
             
+            // 👇👇👇 请把下面这段小球代码粘贴到这里 👇👇👇
+            
+            const sphereGeometry = new THREE.SphereGeometry(0.5, 32, 32); 
+            const sphereMaterial = new THREE.MeshBasicMaterial({ 
+                color: 0xFF008C,     // 亮粉色 (跟你最后的发光文字呼应)
+                wireframe: true,     // 线框模式，看起来更有科技感
+                transparent: true,
+                opacity: 0.8
+            });
+            const sphere = new THREE.Mesh(sphereGeometry, sphereMaterial);
+            
+            // 设置小球的位置 (X, Y, Z) - 你可以根据需要修改这三个数字
+            sphere.position.set(0, 1, 0); 
+            
+            // 将小球加入场景
+            if (viewer.scene) {
+                viewer.scene.add(sphere);
+            } else {
+                // 兼容不同版本的高斯库
+                viewer.splatMesh.add(sphere); 
+            }
+
+            // 👆👆👆 小球代码结束 👆👆👆
+
             mainCamera = viewer.camera;
             if (mainCamera) {
                 targetPoint.set(0, 0, 0);
@@ -617,56 +657,57 @@
 
         controlPanel.classList.add('collapsed');
         
-// 1. 将两段文字存入数组中
+// 1. 定义所有段落
 const introTexts = [
     "Legend has it that the goddess Hathor is the ‘Eye of Ra’. When the sun god Ra grew old, some took advantage of the situation to pursue their own selfish ends. Upon learning of this, Ra was furious and decided to place the ‘Divine Eye’—which symbolised the sun’s majesty and fiery power—within Hathor’s body, so that she might destroy these self-serving villains.",
-    "This myth is celebrated as the ‘Festival of Hathor’s Drunkenness’. On a specific day each year, people hold grand festivities, drinking and dancing to their hearts’ content, imitating the goddess Hathor’s drunken state in order to communicate with the deities."
+    "This myth is celebrated as the ‘Festival of Hathor’s Drunkenness’. On a specific day each year, people hold grand festivities, drinking and dancing to their hearts’ content, imitating the goddess Hathor’s drunken state in order to communicate with the deities.",
+    "In the Temple of Hathor at Dendera, there are even depictions of the pharaoh himself offering beer to the goddess. Intoxication was regarded as a sacred experience that brought one closer to the gods.",
+    "Although you are not a revered pharaoh, as long as you find the entrance to the temple, you too can take part in this sacred experience of intoxication."
 ];
 
 const container = document.getElementById('introTextContainer');
-let currentTextIndex = 0; // 记录当前播放到第几段
-let charIndex = 0;        // 记录当前段落打到第几个字
+const finalContainer = document.getElementById('finalTextContainer');
+let currentTextIndex = 0;
+let charIndex = 0;
 
-function typeWriter() {
-    if (!container) return;
-    
-    // 获取当前需要播放的文本
-    const currentText = introTexts[currentTextIndex];
-    
-    if (charIndex < currentText.length) {
-        // 逐字打印
-        container.textContent += currentText.charAt(charIndex);
-        charIndex++;
-        setTimeout(typeWriter, 40); // 40毫秒打一个字
-    } else {
-        // 当前段落打字完成，停顿 3 秒
-        setTimeout(() => {
-            // 让文字渐渐消失（触发 CSS 的 transition）
-            container.classList.add('fade-out');
-            
-            // 等待 2 秒淡出动画结束后，判断是否还有下一段
+function runStory() {
+    if (currentTextIndex < 3) {
+        // --- 处理前三段（打字机） ---
+        const currentText = introTexts[currentTextIndex];
+        if (charIndex < currentText.length) {
+            container.textContent += currentText.charAt(charIndex);
+            charIndex++;
+            setTimeout(runStory, 40);
+        } else {
             setTimeout(() => {
-                currentTextIndex++; // 切换到下一段
-                
-                if (currentTextIndex < introTexts.length) {
-                    // 【核心重置】清空文本、重置字数索引、移除消失样式
+                container.classList.add('fade-out');
+                setTimeout(() => {
                     container.textContent = "";
-                    charIndex = 0;
                     container.classList.remove('fade-out');
-                    
-                    // 立即开始播放下一段
-                    typeWriter();
-                } else {
-                    // 所有段落都播放完毕，彻底删除网页中的容器
-                    container.remove();
-                }
-            }, 2000); // 2000毫秒对应消失动画的时长
-        }, 3000); // 3000毫秒是文字打完后的停留展示时间
+                    currentTextIndex++;
+                    charIndex = 0;
+                    runStory();
+                }, 2000);
+            }, 3000);
+        }
+    } else {
+        // --- 处理第四段（粉色发光渐显） ---
+        container.remove(); // 移除打字机容器
+        finalContainer.textContent = introTexts[3];
+        setTimeout(() => {
+            finalContainer.style.opacity = "1";
+        }, 500);
+        
+        // 6秒后消失
+        setTimeout(() => {
+            finalContainer.style.opacity = "0";
+            setTimeout(() => finalContainer.remove(), 3000);
+        }, 6000);
     }
 }
 
-// 页面加载完即启动
-window.addEventListener('load', typeWriter);
+// 启动
+window.addEventListener('load', runStory);
         console.log("✅ UI ready | Auto-rotate ON by default | Speed slider added | Collapsible panel | Pink/Purple/Blue palette");
     </script>
 </body>
