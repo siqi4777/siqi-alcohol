@@ -211,19 +211,30 @@
         }
         
         // 根据距离和角度重新设置相机位置
-        function updateCameraFromAngles() {
-            if (!mainCamera) return;
-            const x = cameraDistance * Math.sin(currentPolar) * Math.sin(currentAzimuth);
-            const z = cameraDistance * Math.sin(currentPolar) * Math.cos(currentAzimuth);
-            const y = cameraDistance * Math.cos(currentPolar);
-            mainCamera.position.set(x, y, z);
-            mainCamera.lookAt(targetPoint);
-            // 同步高斯查看器内部的相机矩阵 (强制更新)
-            if (viewer && viewer.camera) {
-                viewer.camera.position.copy(mainCamera.position);
-                viewer.camera.lookAt(targetPoint);
-            }
+        // 根据距离和角度重新设置相机位置
+function updateCameraFromAngles() {
+    if (!mainCamera) return;
+    
+    // 计算新的相机位置
+    const x = cameraDistance * Math.sin(currentPolar) * Math.sin(currentAzimuth);
+    const z = cameraDistance * Math.sin(currentPolar) * Math.cos(currentAzimuth);
+    const y = cameraDistance * Math.cos(currentPolar);
+    
+    // 设置相机位置
+    mainCamera.position.set(x, y, z);
+    
+    // 【核心修复】：除了设置相机的 lookAt，必须同步更新 viewer.controls 的 target
+    mainCamera.lookAt(targetPoint);
+
+    if (viewer && viewer.controls) {
+        // 让底层控制器也“注视”同一个目标点
+        viewer.controls.target.copy(targetPoint);
+        // 强制更新控制器内部状态，防止被覆盖
+        if (typeof viewer.controls.update === 'function') {
+            viewer.controls.update();
         }
+    }
+}
         
         // 设置相机距离 (外部滑块调用)
         function setCameraDistance(dist) {

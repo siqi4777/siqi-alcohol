@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  <title>A-Frame VR 教室 · 天空盒子</title>
+  <script src="https://aframe.io/releases/1.0.4/aframe.min.js"></script>
+  <style>
+    body { margin: 0; overflow: hidden; }
+    /* 简单加载提示，可选 */
+    .info { position: absolute; bottom: 20px; left: 0; right: 0; text-align: center; color: rgba(255,255,255,0.6); font-family: sans-serif; font-size: 14px; pointer-events: none; text-shadow: 0 1px 4px rgba(0,0,0,0.5); z-index: 10; }
+  </style>
+</head>
+<body>
+  <a-scene
+    background="color: #87ceeb"
+    renderer="antialias: true; colorManagement: true"
+    vr-mode-ui="enabled: true"
+    device-orientation-permission-ui="enabled: true"
+  >
+
+    <!-- 天空盒子：使用根目录 F1 文件夹中的 f1.png -->
+    <a-sky src="./F1/f1.png" rotation="0 -30 0"></a-sky>
+
+    <!-- ASSETS -->
+    <a-assets>
+      <a-asset-item id="chairModel" src="./model/绿松石狮子.glb"></a-asset-item>
+      <a-asset-item id="deskModel" src="./model/绿松石狮子.glb"></a-asset-item>
+    </a-assets>
+
+    <!-- LIGHTS -->
+    <a-ambient-light intensity="0.35"></a-ambient-light>
+    <a-directional-light position="-6 8 4" intensity="0.9" color="#ffffff"></a-directional-light>
+
+    <!-- CAMERA -->
+    <a-entity id="rig" position="0 1.6 8">
+      <a-camera look-controls wasd-controls-enabled="false">
+        <a-cursor
+          fuse="true"
+          fuse-timeout="2000"
+          geometry="primitive: ring; radiusInner: 0.015; radiusOuter: 0.025"
+          material="color: white; shader: flat">
+        </a-cursor>
+      </a-camera>
+    </a-entity>
+
+    <!-- 桌子和椅子（使用相同的狮子模型占位） -->
+    <!-- Row 1 -->
+    <a-entity gltf-model="#deskModel" position="-4 0.5 2" rotation="0 180 0" scale="0.9 0.9 0.9"></a-entity>
+    <a-gltf-model id="table" src="#deskModel" position="0 0.5 2.8" rotation="0 180 0" scale="0.9 0.9 0.9"></a-gltf-model>
+
+    <!-- GAZE TELEPORT MARKERS（凝视传送标记） -->
+    <a-cylinder
+      position="0 0.05 6"
+      radius="0.5"
+      height="0.05"
+      material="color: #00ffff; opacity: 0.45; transparent: true; emissive: #00ffff"
+      smooth-teleport="target: 0 1.6 6">
+    </a-cylinder>
+    <a-cylinder
+      position="0 0.05 0"
+      radius="0.5"
+      height="0.05"
+      material="color: #00ffff; opacity: 0.45; transparent: true; emissive: #00ffff"
+      smooth-teleport="target: 0 1.6 0">
+    </a-cylinder>
+    <a-cylinder
+      position="0 0.05 -5"
+      radius="0.5"
+      height="0.05"
+      material="color: #00ffff; opacity: 0.45; transparent: true; emissive: #00ffff"
+      smooth-teleport="target: 0 1.6 -5">
+    </a-cylinder>
+
+  </a-scene>
+
+  <!-- 简单的加载提示（非必须） -->
+  <div class="info">天空盒子: ./F1/f1.png</div>
+
+  <script src="script.js"></script>
+</body>
+</html>

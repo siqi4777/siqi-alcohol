@@ -3,37 +3,262 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
-  <title>Hathor</title>
+  <title>Hathor · 雪地</title>
 
+  <!-- A-Frame 核心库 -->
   <script src="https://aframe.io/releases/1.0.4/aframe.min.js"></script>
 
   <style>
-    /* 基础重置：黑底，无滚动 */
+    /* 基础重置 */
     body {
       margin: 0;
       overflow: hidden;
       background: #000;
-      font-family: sans-serif;
+      font-family: 'AkzidenzGrotesk-Extended', 'Helvetica Neue', Arial, sans-serif;
     }
     canvas {
       display: block;
     }
 
-    /* VR 分屏模式下保留黑边逻辑 */
-    body.is-vr .a-canvas {
-      max-width: 200mm !important;
-      margin: 0 auto !important;
-      left: 50% !important;
-      transform: translateX(-50%) !important;
-      right: auto !important;
+    /* 控制面板 */
+    .control-panel-wrapper {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      z-index: 100;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
     }
 
-    /* 简单的标题水印 */
+    .panel-toggle-btn {
+      background: rgba(20, 20, 30, 0.45);
+      backdrop-filter: blur(4px);
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      color: #ccc;
+      padding: 6px 16px;
+      border-radius: 40px;
+      font-size: 12px;
+      font-family: 'AkzidenzGrotesk-Extended', monospace;
+      letter-spacing: 0.8px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      margin-bottom: 8px;
+      touch-action: manipulation;
+    }
+    .panel-toggle-btn:hover {
+      background: rgba(255, 255, 255, 0.15);
+      color: #fff;
+      border-color: rgba(255, 255, 255, 0.5);
+    }
+
+    .control-panel {
+      background: rgba(20, 20, 30, 0.4);
+      backdrop-filter: blur(4px);
+      border-radius: 24px;
+      padding: 16px 20px;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6);
+      min-width: 220px;
+      font-family: 'AkzidenzGrotesk-Extended', monospace;
+      letter-spacing: 0.5px;
+      transition: opacity 0.3s, transform 0.3s, max-height 0.3s;
+      user-select: none;
+      max-height: 600px;
+      overflow: hidden;
+      transform-origin: bottom right;
+    }
+    .control-panel.collapsed {
+      max-height: 0;
+      padding: 0 20px;
+      opacity: 0;
+      transform: scale(0.95);
+      border-width: 0;
+      pointer-events: none;
+    }
+
+    .slider-container {
+      margin-bottom: 16px;
+    }
+    .slider-container label {
+      display: block;
+      color: #eee;
+      font-size: 12px;
+      margin-bottom: 8px;
+      letter-spacing: 1px;
+      font-family: 'AkzidenzGrotesk-Extended', monospace;
+    }
+    input[type="range"] {
+      width: 100%;
+      cursor: pointer;
+      background: #2a2a3a;
+      height: 3px;
+      border-radius: 3px;
+      -webkit-appearance: none;
+    }
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: #00d2ff;
+      cursor: pointer;
+      border: none;
+      box-shadow: 0 0 6px #00d2ff;
+    }
+    .value-display {
+      text-align: right;
+      font-size: 11px;
+      color: #aaa;
+      margin-top: 4px;
+      font-family: monospace;
+    }
+
+    .action-btn {
+      background: rgba(0, 210, 255, 0.15);
+      border: 1px solid rgba(0, 210, 255, 0.4);
+      color: #88ddff;
+      padding: 6px 14px;
+      border-radius: 40px;
+      font-size: 12px;
+      font-family: 'AkzidenzGrotesk-Extended', monospace;
+      letter-spacing: 0.8px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      width: 100%;
+      margin-top: 8px;
+      backdrop-filter: blur(4px);
+      touch-action: manipulation;
+    }
+    .action-btn:hover {
+      background: #00aaff;
+      color: #000;
+      border-color: #00aaff;
+      box-shadow: 0 0 10px rgba(0,170,255,0.5);
+    }
+    .action-btn:active {
+      transform: scale(0.96);
+    }
+
+    .status-led {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background-color: #888;
+      margin-right: 6px;
+      box-shadow: none;
+      transition: background-color 0.2s, box-shadow 0.2s;
+    }
+    .status-led.active {
+      background-color: #cc77ff;
+      box-shadow: 0 0 12px #cc77ff, 0 0 24px rgba(170, 102, 255, 0.3);
+    }
+
+    .keyboard-hint {
+      font-size: 10px;
+      color: #999;
+      text-align: center;
+      margin-top: 10px;
+      border-top: 1px solid rgba(255,255,255,0.08);
+      padding-top: 10px;
+      font-family: monospace;
+      letter-spacing: 0.5px;
+      line-height: 1.8;
+    }
+    .keyboard-hint span.highlight {
+      color: #cc99ff;
+      font-weight: bold;
+    }
+    .keyboard-hint span.key {
+      color: #88ddff;
+      font-weight: bold;
+    }
+
+    /* 操作提示 */
+    .wasd-hint {
+      position: absolute;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      color: rgba(255, 255, 255, 0.3);
+      font-size: 12px;
+      pointer-events: none;
+      z-index: 10;
+      letter-spacing: 2px;
+      text-shadow: 0 0 8px #000;
+      font-family: monospace;
+      background: rgba(0,0,0,0.4);
+      padding: 6px 16px;
+      border-radius: 20px;
+      border: 1px solid rgba(255,255,255,0.05);
+    }
+    .wasd-hint span {
+      color: #88ddff;
+      font-weight: bold;
+    }
+
+    /* GAZE 指示器 */
+    .gaze-indicator {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 50;
+      pointer-events: none;
+    }
+    .gaze-indicator::before,
+    .gaze-indicator::after {
+      content: '';
+      position: absolute;
+      background: rgba(0, 210, 255, 0.6);
+    }
+    .gaze-indicator::before {
+      width: 2px;
+      height: 16px;
+      top: -8px;
+      left: -1px;
+    }
+    .gaze-indicator::after {
+      width: 16px;
+      height: 2px;
+      top: -1px;
+      left: -8px;
+    }
+    .gaze-ring {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      border: 2px solid rgba(0, 210, 255, 0.2);
+      z-index: 49;
+      pointer-events: none;
+      transition: border-color 0.1s, box-shadow 0.1s;
+    }
+    .gaze-ring.active {
+      border-color: rgba(0, 210, 255, 0.6);
+      box-shadow: 0 0 20px rgba(0, 210, 255, 0.2);
+    }
+
+    @media (max-width: 600px) {
+      .control-panel { padding: 12px 16px; min-width: 170px; }
+      .action-btn { font-size: 10px; padding: 5px 10px; }
+      .slider-container label { font-size: 10px; }
+      .btn-group { gap: 6px; }
+      .btn-group .action-btn { font-size: 10px; padding: 6px 4px; }
+      .control-panel-wrapper { bottom: 16px; right: 16px; }
+      .keyboard-hint { font-size: 9px; }
+      .wasd-hint { font-size: 10px; padding: 4px 12px; bottom: 70px; }
+    }
+
     .watermark {
       position: absolute;
       bottom: 20px;
       left: 20px;
-      color: rgba(255, 255, 255, 0.2);
+      color: rgba(255, 255, 255, 0.15);
       font-size: 14px;
       pointer-events: none;
       z-index: 10;
@@ -44,8 +269,34 @@
 </head>
 <body>
 
-  <div class="watermark">Hathor</div>
+  <div class="watermark">✦ HATHOR · 雪地</div>
+  
+  <!-- GAZE 指示器 -->
+  <div class="gaze-indicator"></div>
+  <div class="gaze-ring" id="gazeRing"></div>
 
+  <!-- 控制面板 -->
+  <div class="control-panel-wrapper">
+    <button id="panelToggleBtn" class="panel-toggle-btn">▸ SHOW CONTROLS</button>
+    <div class="control-panel collapsed" id="controlPanel">
+      <div class="slider-container">
+        <label>◈ GAZE SPEED</label>
+        <input type="range" id="gazeSpeedSlider" min="0.5" max="3" step="0.1" value="4">
+        <div class="value-display" id="gazeSpeedValue">SPEED: 1.5</div>
+      </div>
+      <button id="gazeToggleBtn" class="action-btn" style="margin-top:4px;">
+        <span class="btn-text">
+          <span id="gazeStatusLed" class="status-led active"></span>
+          <span id="gazeBtnText">👁 GAZE MOVE ON</span>
+        </span>
+      </button>
+      <div class="keyboard-hint">
+        <span class="highlight">⌨️</span> &nbsp;<span class="key">WASD</span> = move &nbsp;·&nbsp; <span class="key">G</span> = gaze toggle
+      </div>
+    </div>
+  </div>
+
+  <!-- A-Frame 场景 -->
   <a-scene
     background="color: #000000"
     renderer="antialias: true; colorManagement: true"
@@ -53,39 +304,190 @@
     device-orientation-permission-ui="enabled: true"
   >
 
+    <!-- 资源 -->
     <a-assets>
       <img id="panoramaImg" src="F1/f1.png" crossorigin="anonymous">
+      <!-- 雪地地面 -->
+      <a-asset-item id="snowGround" src="model/雪地.glb"></a-asset-item>
     </a-assets>
 
+    <!-- 全景背景 -->
     <a-sky src="#panoramaImg" rotation="0 -90 0"></a-sky>
 
-    <a-entity id="rig" position="0 0.3 0">
-      <a-camera look-controls wasd-controls-enabled="false">
+    <!-- ===== 雪地地面 ===== -->
+    <a-entity 
+      gltf-model="#snowGround" 
+      position="0 -7 0" 
+      scale="0.7 0.7 0.7"
+      rotation="0 0 0"
+      class="ground-entity"
+    ></a-entity>
+
+    <!-- ===== 光照 ===== -->
+    <a-entity light="type: ambient; color: #8090B0; intensity: 1.0"></a-entity>
+    
+    <!-- 主方向光 -->
+    <a-entity light="type: directional; color: #FFFFFF; intensity: 1.5; position: 0 8 6"></a-entity>
+    <a-entity light="type: directional; color: #FFEECC; intensity: 0.8; position: 3 6 -4"></a-entity>
+    <a-entity light="type: directional; color: #CCDDFF; intensity: 0.6; position: -3 6 -4"></a-entity>
+    
+    <!-- 补光 -->
+    <a-entity light="type: directional; color: #AABBFF; intensity: 0.4; position: 0 -2 0"></a-entity>
+    
+    <!-- 点光源 -->
+    <a-point-light position="0 3 2" intensity="1.2" color="#FFFFFF" distance="20"></a-point-light>
+
+    <!-- ===== 玩家控制器 - WASD + GAZE ===== -->
+    <a-entity id="rig" position="0 0.004 0">
+      <a-camera id="camera" look-controls wasd-controls-enabled="true" wasd-controls-acceleration="20" wasd-controls-deceleration="10">
         <a-cursor
-          fuse="false"
+          id="gazeCursor"
+          fuse="true"
+          fuse-timeout="1400"
           geometry="primitive: ring; radiusInner: 0.015; radiusOuter: 0.025"
-          material="color: #00ccff; shader: flat; opacity: 0.4"
+          material="color: #00ccff; shader: flat; opacity: 0.3"
+          raycaster="far: 20"
         ></a-cursor>
       </a-camera>
     </a-entity>
 
-    <a-ambient-light intensity="0.6" color="#ffffff"></a-ambient-light>
-
   </a-scene>
 
   <script>
+    // ===== 控制面板逻辑 =====
     document.addEventListener('DOMContentLoaded', function() {
-      var sceneEl = document.querySelector('a-scene');
-      if (sceneEl) {
-        sceneEl.addEventListener('enter-vr', function () {
-          document.body.classList.add('is-vr');
+      // 面板切换
+      const panelToggleBtn = document.getElementById('panelToggleBtn');
+      const controlPanel = document.getElementById('controlPanel');
+      let panelVisible = false;
+
+      panelToggleBtn.addEventListener('click', () => {
+        panelVisible = !panelVisible;
+        if (panelVisible) {
+          controlPanel.classList.remove('collapsed');
+          panelToggleBtn.textContent = '▸ HIDE CONTROLS';
+        } else {
+          controlPanel.classList.add('collapsed');
+          panelToggleBtn.textContent = '▸ SHOW CONTROLS';
+        }
+      });
+
+      // GAZE 移动控制
+      const gazeToggleBtn = document.getElementById('gazeToggleBtn');
+      const gazeStatusLed = document.getElementById('gazeStatusLed');
+      const gazeBtnText = document.getElementById('gazeBtnText');
+      const gazeRing = document.getElementById('gazeRing');
+      let isGazeEnabled = true;
+
+      // 获取 cursor 元素
+      const cursor = document.querySelector('#gazeCursor');
+      
+      // 监听 fuse 事件
+      if (cursor) {
+        cursor.addEventListener('fusing', function(evt) {
+          if (!isGazeEnabled) return;
+          gazeRing.classList.add('active');
         });
-        sceneEl.addEventListener('exit-vr', function () {
-          document.body.classList.remove('is-vr');
+
+        cursor.addEventListener('fuse', function(evt) {
+          if (!isGazeEnabled) return;
+          // 获取注视方向
+          const camera = document.querySelector('#camera');
+          if (!camera) return;
+          
+          const direction = new THREE.Vector3(0, 0, -1);
+          direction.applyQuaternion(camera.object3D.quaternion);
+          direction.y = 0;
+          direction.normalize();
+          
+          const rig = document.querySelector('#rig');
+          if (!rig) return;
+          
+          const speed = parseFloat(document.getElementById('gazeSpeedSlider').value) || 1.5;
+          const currentPos = rig.object3D.position;
+          const newPos = currentPos.clone().add(direction.multiplyScalar(speed * 0.15));
+          
+          // 边界限制 (范围 -6 到 6)
+          newPos.x = Math.max(-6, Math.min(6, newPos.x));
+          newPos.z = Math.max(-6, Math.min(6, newPos.z));
+          
+          // 平滑移动
+          rig.object3D.position.copy(newPos);
+          
+          // 视觉反馈
+          gazeRing.style.borderColor = 'rgba(0, 210, 255, 0.9)';
+          gazeRing.style.boxShadow = '0 0 30px rgba(0, 210, 255, 0.4)';
+          setTimeout(() => {
+            gazeRing.style.borderColor = 'rgba(0, 210, 255, 0.2)';
+            gazeRing.style.boxShadow = 'none';
+          }, 300);
+          
+          gazeRing.classList.remove('active');
+        });
+
+        cursor.addEventListener('mouseup', function(evt) {
+          gazeRing.classList.remove('active');
+        });
+
+        cursor.addEventListener('mouseleave', function(evt) {
+          gazeRing.classList.remove('active');
         });
       }
-    });
-  </script>
 
+      function toggleGaze() {
+        isGazeEnabled = !isGazeEnabled;
+        if (isGazeEnabled) {
+          gazeStatusLed.classList.add('active');
+          gazeBtnText.innerText = '👁 GAZE MOVE ON';
+          gazeToggleBtn.classList.add('pressed-rotate');
+        } else {
+          gazeStatusLed.classList.remove('active');
+          gazeBtnText.innerText = '👁 GAZE MOVE OFF';
+          gazeToggleBtn.classList.remove('pressed-rotate');
+        }
+      }
+
+      gazeToggleBtn.addEventListener('click', toggleGaze);
+      
+      // 键盘快捷键 G
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'g' || e.key === 'G') {
+          e.preventDefault();
+          toggleGaze();
+        }
+      });
+
+      // GAZE 速度滑块
+      const gazeSpeedSlider = document.getElementById('gazeSpeedSlider');
+      const gazeSpeedValue = document.getElementById('gazeSpeedValue');
+      
+      gazeSpeedSlider.addEventListener('input', (e) => {
+        const val = parseFloat(e.target.value);
+        gazeSpeedValue.innerText = `SPEED: ${val.toFixed(1)}`;
+      });
+
+      // 默认折叠面板
+      controlPanel.classList.add('collapsed');
+      
+      // 添加样式
+      const style = document.createElement('style');
+      style.textContent = `
+        .action-btn.pressed-rotate {
+          background: rgba(255, 100, 180, 0.35);
+          border-color: #ff64b4;
+          box-shadow: 0 0 20px rgba(255, 100, 180, 0.35);
+          color: #ffb0d8;
+        }
+        .action-btn.pressed-rotate:hover {
+          background: rgba(255, 100, 180, 0.5);
+        }
+      `;
+      document.head.appendChild(style);
+    });
+
+    console.log('✦ Hathor 雪地已加载');
+    console.log('📖 操作提示: WASD移动 | 鼠标拖拽视角 | G键切换GAZE移动');
+    console.log('👁 GAZE移动: 注视屏幕中心1.4秒后向该方向移动');
+  </script>
 </body>
 </html>
