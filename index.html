@@ -3,6 +3,7 @@
 <head>
     <meta charset="utf-8">
     <title>DEADDRUNK</title>
+    <script src="global-vr.js"></script>
     <style>
         @font-face {
             font-family: 'AkzidenzGrotesk-Extended';
@@ -846,6 +847,12 @@ window.addEventListener('click', (event) => {
 
 // 启动打字机故事
 window.addEventListener('load', runStory);
+
+// 👇 直接从全局环境调用 VR 初始化函数 👇
+if (window.initVRMode) {
+    window.initVRMode({ viewer: viewer, THREE: THREE });
+}
+
 console.log("✅ UI ready | Auto-rotate ON by default | Speed slider added | Collapsible panel | Pink/Purple/Blue palette");
 </script>
 
@@ -860,6 +867,6 @@ console.log("✅ UI ready | Auto-rotate ON by default | Speed slider added | Col
     </div>
 </div>
 
-<script src="global-vr.js"></script>
+
 </body>
 </html>
