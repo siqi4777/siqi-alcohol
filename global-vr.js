@@ -78,28 +78,27 @@ window.initVRMode = async function(options = {}) {
 
             if (!orientationControls) orientationControls = new DeviceOrientationControls(viewer.camera);
 
-            // ================= 核心修复部分 =================
-            if (!originalRender) {
-                originalRender = viewer.renderer.render.bind(viewer.renderer);
-                
-                // 将拦截函数赋值给一个明确的变量，避免 this 指向错误
-                const patchedRender = function(scene, camera) {
-                    if (window.isVRMode) {
-                        if (orientationControls) orientationControls.update(); 
-                        
-                        // 临时恢复原生 render，防止 StereoEffect 内部调用时死循环
-                        viewer.renderer.render = originalRender;
-                        // 渲染左右分屏（内部会调用两次原生 render）
-                        stereoEffect.render(scene, camera); 
-                        // 重新挂载拦截函数
-                        viewer.renderer.render = patchedRender; 
-                    } else {
-                        originalRender(scene, camera);
-                    }
-                };
-                viewer.renderer.render = patchedRender;
+// ================= 核心修复部分（替换原有代码） =================
+if (!originalRender) {
+    originalRender = viewer.renderer.render.bind(viewer.renderer);
+    // 简化渲染拦截逻辑，避免死循环
+    viewer.renderer.render = function(scene, camera) {
+        if (window.isVRMode) {
+            // 确保Controls更新
+            if (orientationControls) {
+                orientationControls.update();
             }
-            // ===============================================
+            // 强制更新StereoEffect尺寸（适配手机屏幕）
+            stereoEffect.setSize(window.innerWidth, window.innerHeight);
+            // 执行分屏渲染
+            stereoEffect.render(scene, camera);
+        } else {
+            // 非VR模式用原生渲染
+            originalRender(scene, camera);
+        }
+    };
+}
+// ===============================================
 
             vrBtn.innerText = "❌ EXIT VR";
             vrBtn.style.background = "rgba(255, 100, 180, 0.5)";
