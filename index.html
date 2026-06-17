@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <title>AR ALCOHOL F1 · Gaussian Splat Console</title>
+    <title>DEADDRUNK</title>
     <style>
         @font-face {
             font-family: 'AkzidenzGrotesk-Extended';
@@ -316,7 +316,104 @@
             .control-panel-wrapper { bottom: 16px; right: 16px; }
             .keyboard-hint { font-size: 9px; }
         }
-    </style>
+    
+        /* 居中弹窗样式 (无黑屏，风格统一) */
+        #choiceOverlay {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(20, 20, 30, 0.75);
+            backdrop-filter: blur(12px);
+            border-radius: 24px;
+            padding: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8);
+            width: 80%;
+            max-width: 500px;
+            z-index: 2000;
+            text-align: center;
+        }
+
+        #choiceOverlay p {
+            color: #eee;
+            font-size: 16px;
+            line-height: 1.6;
+            margin-bottom: 24px;
+            font-family: 'AkzidenzGrotesk-LightExtended', sans-serif;
+            letter-spacing: 0.5px;
+        }
+
+        .modal-btn-group {
+            display: flex;
+            justify-content: center;
+            gap: 16px;
+        }
+
+        .modal-btn {
+            background: rgba(0, 210, 255, 0.15);
+            border: 1px solid rgba(0, 210, 255, 0.4);
+            color: #88ddff;
+            padding: 10px 20px;
+            border-radius: 40px;
+            font-size: 11px;
+            font-family: 'AkzidenzGrotesk-Extended', monospace;
+            letter-spacing: 0.8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .modal-btn:hover {
+            background: #00aaff;
+            color: #000;
+            border-color: #00aaff;
+            box-shadow: 0 0 15px rgba(0,170,255,0.6);
+        }
+
+        .modal-btn.primary {
+            background: rgba(255, 100, 180, 0.2);
+            border-color: #ff64b4;
+            color: #ffb0d8;
+        }
+
+        .modal-btn.primary:hover {
+            background: #ff64b4;
+            color: #000;
+            border-color: #ff64b4;
+            box-shadow: 0 0 15px rgba(255,100,180,0.6);
+        }
+        
+        @media (max-width: 600px) {
+            .modal-btn-group { flex-direction: column; }
+            #choiceOverlay { width: 90%; padding: 20px; }
+            #choiceOverlay p { font-size: 14px; }
+        }
+        /* --- 手机端自适应逻辑 --- */
+@media (max-width: 600px) {
+    #choiceOverlay {
+        width: 85%;            /* 手机上宽度占85% */
+        padding: 20px 15px;    /* 缩小内边距 */
+        top: 50%;              /* 依然居中 */
+    }
+
+    #choiceOverlay p {
+        font-size: 14px;       /* 减小字号，避免文字过长 */
+        margin-bottom: 20px;
+    }
+
+    .modal-btn-group {
+        flex-direction: column; /* 按钮改为垂直排列 */
+        gap: 10px;              /* 缩小按钮间距 */
+    }
+
+    .modal-btn {
+        width: 100%;            /* 按钮宽度占满 */
+        padding: 12px 0;        /* 增加点击区域高度，方便手指操作 */
+        font-size: 12px;
+    }
+}
+</style>
     
     <script type="importmap">
       {
@@ -494,9 +591,14 @@
             // 设置小球的位置 (X, Y, Z) - 你可以根据需要修改这三个数字
             sphere.position.set(0, 1, 0); 
             
+              // 在你的 scene.add(sphere) 之后
+sphere.visible = false; // 默认不可见
+sphere.name = "magicSphere"; // 给它起个名字，方便射线检测找到它
             // 将小球加入场景
             if (viewer.scene) {
                 viewer.scene.add(sphere);
+
+              
             } else {
                 // 兼容不同版本的高斯库
                 viewer.splatMesh.add(sphere); 
@@ -704,11 +806,57 @@ function runStory() {
             setTimeout(() => finalContainer.remove(), 3000);
         }, 6000);
     }
-}
+} // 👈 【关键修复】：runStory 的大括号必须在这里闭合！
 
-// 启动
+// --- 射线点击监听一定要在 runStory 的外面！ ---
+const raycaster = new THREE.Raycaster();
+const mouse = new THREE.Vector2();
+
+window.addEventListener('click', (event) => {
+    // 忽略点击面板按钮本身的事件，防止冲突
+    if (event.target.tagName.toLowerCase() === 'button') return;
+
+    // 1. 将鼠标坐标转换为标准设备坐标 (-1 到 +1)
+    mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+    mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+    // 2. 更新射线 (确保 mainCamera 存在)
+    if (mainCamera) {
+        raycaster.setFromCamera(mouse, mainCamera);
+
+        // 获取场景中所有的物体进行相交测试（兼容不同版本高斯库）
+        let objectsToTest = [];
+        if (viewer.scene) objectsToTest = viewer.scene.children;
+        else if (viewer.splatMesh) objectsToTest = viewer.splatMesh.children;
+
+        // 3. 检查射线是否碰到小球
+        const intersects = raycaster.intersectObjects(objectsToTest, true);
+        
+        for (let i = 0; i < intersects.length; i++) {
+            if (intersects[i].object.name === "magicSphere") {
+                // 4. 如果点中了，显示 UI
+                document.getElementById('choiceOverlay').style.display = 'block';
+                break;
+            }
+        }
+    }
+});
+
+// 启动打字机故事
 window.addEventListener('load', runStory);
-        console.log("✅ UI ready | Auto-rotate ON by default | Speed slider added | Collapsible panel | Pink/Purple/Blue palette");
-    </script>
+console.log("✅ UI ready | Auto-rotate ON by default | Speed slider added | Collapsible panel | Pink/Purple/Blue palette");
+</script>
+
+
+
+
+<div id="choiceOverlay">
+    <p>Congratulations, our esteemed guest. You have been granted access to the temple’s entrance—a symbol of prestige and status for ordinary folk. Would you care to join us and drink until we’re dead drunk?</p>
+    <div class="modal-btn-group">
+        <button class="modal-btn" onclick="window.location.href='Life.html'">I’ve got my own things to do</button>
+        <button class="modal-btn primary" onclick="window.location.href='F1.html'">Can’t wait</button>
+    </div>
+</div>
+
 </body>
 </html>
