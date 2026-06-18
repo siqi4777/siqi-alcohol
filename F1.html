@@ -287,7 +287,7 @@
 
     <!-- CAMERA -->
     <a-entity id="rig" position="0 1.6 8">
-      <a-camera look-controls wasd-controls="acceleration: 30; fly: false; speed: 15">
+      <a-camera look-controls wasd-controls="acceleration: 100; fly: false; speed: 15">
         <a-cursor
           fuse="true"
           fuse-timeout="800"
@@ -320,6 +320,7 @@
   <script>
     // ============================================================
     // 交互数据 - 每个物品的完整叙事配置（英文）
+    // 根据需求完整配置：时间与虚妄、爱与失去、自然与神性
     // ============================================================
     const ITEM_DATA = {
       silverDistiller: {
@@ -604,15 +605,19 @@
         });
         
         el.addEventListener('mouseleave', function() {
-          isHovering = false;
-          if (hoverTimer) {
-            clearTimeout(hoverTimer);
-            hoverTimer = null;
-          }
-          if (!isPanelOpen) {
-            itemNameEl.classList.remove('visible');
-          }
-        });
+  isHovering = false;
+
+  if (hoverTimer) {
+    clearTimeout(hoverTimer);
+    hoverTimer = null;
+  }
+
+  itemNameEl.textContent = '';
+
+  if (!isPanelOpen) {
+    itemNameEl.classList.remove('visible');
+  }
+});
       }
     });
 
@@ -623,6 +628,55 @@
         el.setAttribute('gaze-info', `itemKey: ${key}`);
       }
     });
+
+// ============================================================
+    // A-Frame 平滑传送组件 (修复传送点失效问题)
+    // ============================================================
+AFRAME.registerComponent('smooth-teleport', {
+  schema: {
+    target: { type: 'vec3' },
+    dur: { type: 'number', default: 800 }
+  },
+
+  init: function () {
+    const el = this.el;
+    const rig = document.querySelector('#rig');
+    const data = this.data;
+
+    let timer = null;
+
+    el.addEventListener('mouseenter', () => {
+      timer = setTimeout(() => {
+        rig.setAttribute('animation', {
+          property: 'position',
+          to: `${data.target.x} ${data.target.y} ${data.target.z}`,
+          dur: data.dur,
+          easing: 'easeInOutQuad'
+        });
+setTimeout(() => {
+  const cursor =
+    document.querySelector('[raycaster]');
+
+  if (
+    cursor &&
+    cursor.components &&
+    cursor.components.raycaster
+  ) {
+    cursor.components.raycaster.refreshObjects();
+  }
+
+  itemNameEl.classList.remove('visible');
+  itemNameEl.textContent = '';
+}, data.dur + 50);
+
+      }, 1000);
+    });
+
+    el.addEventListener('mouseleave', () => {
+      clearTimeout(timer);
+    });
+  }
+});
 
     updateAlcoholMeter();
 
