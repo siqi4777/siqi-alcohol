@@ -87,6 +87,8 @@
       <a-asset-item id="alienLiddedCup" src="./model/异形盖杯.glb"></a-asset-item>
     </a-assets>
 
+
+    
     <!-- 雪地地面 -->
     <a-entity gltf-model="#snowGround" position="0 -4 0" rotation="0 0 0" scale="1 1 1" shadow></a-entity>
 
@@ -317,26 +319,7 @@
 
   <script>
     // ============================================================
-    // 等待 A-Frame 场景加载完成后再注册组件
-    // ============================================================
-    document.addEventListener('DOMContentLoaded', function() {
-      const scene = document.querySelector('a-scene');
-      if (!scene) return;
-
-      scene.addEventListener('loaded', function() {
-        console.log('✦ 场景已加载，初始化交互系统...');
-        initInteraction();
-      });
-
-      // 如果场景已经加载完成
-      if (scene.hasLoaded) {
-        console.log('✦ 场景已就绪，初始化交互系统...');
-        initInteraction();
-      }
-    });
-
-    // ============================================================
-    // 交互数据
+    // 交互数据 - 每个物品的完整叙事配置（英文）
     // ============================================================
     const ITEM_DATA = {
       silverDistiller: {
@@ -469,14 +452,12 @@
     const alcoholValue = document.getElementById('alcohol-value');
     const completionEl = document.getElementById('completion');
 
-    // ============================================================
-    // 交互函数
-    // ============================================================
     function applyEchoEffect() {
       const soundSystem = document.querySelector('#sound-system');
       const ambient = soundSystem ? soundSystem.querySelector('a-sound') : null;
       if (ambient && ambient.components && ambient.components.sound) {
-        ambient.components.sound.setVolume(0.08);
+        const currentVol = ambient.components.sound.volume || 0.25;
+        ambient.components.sound.setVolume(Math.max(0.05, currentVol * 0.3));
         setTimeout(() => {
           ambient.components.sound.setVolume(0.25);
         }, 3000);
@@ -589,69 +570,71 @@
     }
 
     // ============================================================
-    // 初始化交互 - 在场景加载完成后执行
+    // A-Frame 凝视组件
     // ============================================================
-    function initInteraction() {
-      // 注册 gaze-info 组件
-      AFRAME.registerComponent('gaze-info', {
-        schema: {
-          itemKey: { type: 'string', default: '' }
-        },
-        init: function() {
-          let el = this.el;
-          let key = this.data.itemKey || el.dataset.item;
-          if (!key || !ITEM_DATA[key]) return;
-          
-          let hoverTimer = null;
-          let isHovering = false;
-          
-          el.addEventListener('mouseenter', function() {
-            if (isPanelOpen) return;
-            if (completedItems.has(key)) return;
-            isHovering = true;
-            const data = ITEM_DATA[key];
-            if (data) {
-              itemNameEl.textContent = '✦ ' + data.name;
-              itemNameEl.classList.add('visible');
-            }
-            hoverTimer = setTimeout(() => {
-              if (isHovering && !isPanelOpen && !completedItems.has(key)) {
-                const data = ITEM_DATA[key];
-                if (data) {
-                  showInfoPanel(key, data);
-                }
+    AFRAME.registerComponent('gaze-info', {
+      schema: {
+        itemKey: { type: 'string', default: '' }
+      },
+      init: function() {
+        let el = this.el;
+        let key = this.data.itemKey || el.dataset.item;
+        if (!key || !ITEM_DATA[key]) return;
+        
+        let hoverTimer = null;
+        let isHovering = false;
+        
+        el.addEventListener('mouseenter', function() {
+          if (isPanelOpen) return;
+          if (completedItems.has(key)) return;
+          isHovering = true;
+          const data = ITEM_DATA[key];
+          if (data) {
+            itemNameEl.textContent = '✦ ' + data.name;
+            itemNameEl.classList.add('visible');
+          }
+          hoverTimer = setTimeout(() => {
+            if (isHovering && !isPanelOpen && !completedItems.has(key)) {
+              const data = ITEM_DATA[key];
+              if (data) {
+                showInfoPanel(key, data);
               }
-            }, 1500);
-          });
-          
-          el.addEventListener('mouseleave', function() {
-            isHovering = false;
-            if (hoverTimer) {
-              clearTimeout(hoverTimer);
-              hoverTimer = null;
             }
-            if (!isPanelOpen) {
-              itemNameEl.classList.remove('visible');
-            }
-          });
-        }
-      });
+          }, 1500);
+        });
+        
+        el.addEventListener('mouseleave', function() {
+          isHovering = false;
+          if (hoverTimer) {
+            clearTimeout(hoverTimer);
+            hoverTimer = null;
+          }
+          if (!isPanelOpen) {
+            itemNameEl.classList.remove('visible');
+          }
+        });
+      }
+    });
 
-      // 为所有可交互物品添加 gaze-info 组件
-      document.querySelectorAll('.clickable[data-item]').forEach(el => {
-        const key = el.dataset.item;
-        if (key && ITEM_DATA[key]) {
-          el.setAttribute('gaze-info', `itemKey: ${key}`);
-          console.log('✦ 注册物品: ' + key);
-        }
-      });
+    // 注册所有物品
+    document.querySelectorAll('.clickable[data-item]').forEach(el => {
+      const key = el.dataset.item;
+      if (key && ITEM_DATA[key]) {
+        el.setAttribute('gaze-info', `itemKey: ${key}`);
+      }
+    });
 
-      // 初始化进度
-      updateAlcoholMeter();
-      console.log('✦ 交互系统初始化完成，共 ' + totalItems + ' 件物品');
-    }
+    updateAlcoholMeter();
 
-    // 点击音效
+    document.addEventListener('DOMContentLoaded', function() {
+      const scene = document.querySelector('a-scene');
+      if (scene) {
+        scene.addEventListener('loaded', function() {
+          console.log('✦ 完整场景已加载 — ' + totalItems + ' 件物品等待探索');
+        });
+      }
+    });
+
     document.addEventListener('click', function(e) {
       const soundSystem = document.querySelector('#sound-system');
       if (soundSystem && e.target.closest('.clickable')) {
@@ -659,6 +642,8 @@
         if (clickSound) clickSound.components.sound.playSound();
       }
     });
+
+    console.log('✦ 完整场景已启动 — ' + totalItems + ' 件物品等待探索');
   </script>
 </body>
 </html>
