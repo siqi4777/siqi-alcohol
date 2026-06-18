@@ -3,491 +3,259 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
-  <title>Hathor · 雪地</title>
-
-  <!-- A-Frame 核心库 -->
+  <title>A-Frame VR 教室 · 全物品展示（缩小版）</title>
   <script src="https://aframe.io/releases/1.0.4/aframe.min.js"></script>
-
   <style>
-    /* 基础重置 */
-    body {
-      margin: 0;
-      overflow: hidden;
-      background: #000;
-      font-family: 'AkzidenzGrotesk-Extended', 'Helvetica Neue', Arial, sans-serif;
-    }
-    canvas {
-      display: block;
-    }
-
-    /* 控制面板 */
-    .control-panel-wrapper {
-      position: fixed;
-      bottom: 24px;
-      right: 24px;
-      z-index: 100;
-      display: flex;
-      flex-direction: column;
-      align-items: flex-end;
-    }
-
-    .panel-toggle-btn {
-      background: rgba(20, 20, 30, 0.45);
-      backdrop-filter: blur(4px);
-      border: 1px solid rgba(255, 255, 255, 0.25);
-      color: #ccc;
-      padding: 6px 16px;
-      border-radius: 40px;
-      font-size: 12px;
-      font-family: 'AkzidenzGrotesk-Extended', monospace;
-      letter-spacing: 0.8px;
-      cursor: pointer;
-      transition: all 0.2s ease;
-      margin-bottom: 8px;
-      touch-action: manipulation;
-    }
-    .panel-toggle-btn:hover {
-      background: rgba(255, 255, 255, 0.15);
-      color: #fff;
-      border-color: rgba(255, 255, 255, 0.5);
-    }
-
-    .control-panel {
-      background: rgba(20, 20, 30, 0.4);
-      backdrop-filter: blur(4px);
-      border-radius: 24px;
-      padding: 16px 20px;
-      border: 1px solid rgba(255, 255, 255, 0.2);
-      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6);
-      min-width: 220px;
-      font-family: 'AkzidenzGrotesk-Extended', monospace;
-      letter-spacing: 0.5px;
-      transition: opacity 0.3s, transform 0.3s, max-height 0.3s;
-      user-select: none;
-      max-height: 600px;
-      overflow: hidden;
-      transform-origin: bottom right;
-    }
-    .control-panel.collapsed {
-      max-height: 0;
-      padding: 0 20px;
-      opacity: 0;
-      transform: scale(0.95);
-      border-width: 0;
-      pointer-events: none;
-    }
-
-    .slider-container {
-      margin-bottom: 16px;
-    }
-    .slider-container label {
-      display: block;
-      color: #eee;
-      font-size: 12px;
-      margin-bottom: 8px;
-      letter-spacing: 1px;
-      font-family: 'AkzidenzGrotesk-Extended', monospace;
-    }
-    input[type="range"] {
-      width: 100%;
-      cursor: pointer;
-      background: #2a2a3a;
-      height: 3px;
-      border-radius: 3px;
-      -webkit-appearance: none;
-    }
-    input[type="range"]::-webkit-slider-thumb {
-      -webkit-appearance: none;
-      width: 14px;
-      height: 14px;
-      border-radius: 50%;
-      background: #00d2ff;
-      cursor: pointer;
-      border: none;
-      box-shadow: 0 0 6px #00d2ff;
-    }
-    .value-display {
-      text-align: right;
-      font-size: 11px;
-      color: #aaa;
-      margin-top: 4px;
-      font-family: monospace;
-    }
-
-    .action-btn {
-      background: rgba(0, 210, 255, 0.15);
-      border: 1px solid rgba(0, 210, 255, 0.4);
-      color: #88ddff;
-      padding: 6px 14px;
-      border-radius: 40px;
-      font-size: 12px;
-      font-family: 'AkzidenzGrotesk-Extended', monospace;
-      letter-spacing: 0.8px;
-      cursor: pointer;
-      transition: all 0.2s ease;
-      width: 100%;
-      margin-top: 8px;
-      backdrop-filter: blur(4px);
-      touch-action: manipulation;
-    }
-    .action-btn:hover {
-      background: #00aaff;
-      color: #000;
-      border-color: #00aaff;
-      box-shadow: 0 0 10px rgba(0,170,255,0.5);
-    }
-    .action-btn:active {
-      transform: scale(0.96);
-    }
-
-    .status-led {
-      display: inline-block;
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      background-color: #888;
-      margin-right: 6px;
-      box-shadow: none;
-      transition: background-color 0.2s, box-shadow 0.2s;
-    }
-    .status-led.active {
-      background-color: #cc77ff;
-      box-shadow: 0 0 12px #cc77ff, 0 0 24px rgba(170, 102, 255, 0.3);
-    }
-
-    .keyboard-hint {
-      font-size: 10px;
-      color: #999;
-      text-align: center;
-      margin-top: 10px;
-      border-top: 1px solid rgba(255,255,255,0.08);
-      padding-top: 10px;
-      font-family: monospace;
-      letter-spacing: 0.5px;
-      line-height: 1.8;
-    }
-    .keyboard-hint span.highlight {
-      color: #cc99ff;
-      font-weight: bold;
-    }
-    .keyboard-hint span.key {
-      color: #88ddff;
-      font-weight: bold;
-    }
-
-    /* 操作提示 */
-    .wasd-hint {
-      position: absolute;
-      bottom: 20px;
-      left: 50%;
-      transform: translateX(-50%);
-      color: rgba(255, 255, 255, 0.3);
-      font-size: 12px;
-      pointer-events: none;
-      z-index: 10;
-      letter-spacing: 2px;
-      text-shadow: 0 0 8px #000;
-      font-family: monospace;
-      background: rgba(0,0,0,0.4);
-      padding: 6px 16px;
-      border-radius: 20px;
-      border: 1px solid rgba(255,255,255,0.05);
-    }
-    .wasd-hint span {
-      color: #88ddff;
-      font-weight: bold;
-    }
-
-    /* GAZE 指示器 */
-    .gaze-indicator {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      z-index: 50;
-      pointer-events: none;
-    }
-    .gaze-indicator::before,
-    .gaze-indicator::after {
-      content: '';
-      position: absolute;
-      background: rgba(0, 210, 255, 0.6);
-    }
-    .gaze-indicator::before {
-      width: 2px;
-      height: 16px;
-      top: -8px;
-      left: -1px;
-    }
-    .gaze-indicator::after {
-      width: 16px;
-      height: 2px;
-      top: -1px;
-      left: -8px;
-    }
-    .gaze-ring {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      width: 36px;
-      height: 36px;
-      border-radius: 50%;
-      border: 2px solid rgba(0, 210, 255, 0.2);
-      z-index: 49;
-      pointer-events: none;
-      transition: border-color 0.1s, box-shadow 0.1s;
-    }
-    .gaze-ring.active {
-      border-color: rgba(0, 210, 255, 0.6);
-      box-shadow: 0 0 20px rgba(0, 210, 255, 0.2);
-    }
-
-    @media (max-width: 600px) {
-      .control-panel { padding: 12px 16px; min-width: 170px; }
-      .action-btn { font-size: 10px; padding: 5px 10px; }
-      .slider-container label { font-size: 10px; }
-      .btn-group { gap: 6px; }
-      .btn-group .action-btn { font-size: 10px; padding: 6px 4px; }
-      .control-panel-wrapper { bottom: 16px; right: 16px; }
-      .keyboard-hint { font-size: 9px; }
-      .wasd-hint { font-size: 10px; padding: 4px 12px; bottom: 70px; }
-    }
-
-    .watermark {
-      position: absolute;
-      bottom: 20px;
-      left: 20px;
-      color: rgba(255, 255, 255, 0.15);
-      font-size: 14px;
-      pointer-events: none;
-      z-index: 10;
-      letter-spacing: 2px;
-      text-shadow: 0 0 8px #000;
-    }
+    body { margin: 0; overflow: hidden; }
+    .info { position: absolute; bottom: 20px; left: 0; right: 0; text-align: center; color: rgba(255,255,255,0.8); font-family: sans-serif; font-size: 14px; pointer-events: none; text-shadow: 0 1px 4px rgba(0,0,0,0.5); z-index: 10; }
+    .controls-hint { position: absolute; top: 20px; left: 50%; transform: translateX(-50%); color: rgba(255,255,255,0.7); font-family: sans-serif; font-size: 13px; background: rgba(0,0,0,0.4); padding: 8px 16px; border-radius: 20px; pointer-events: none; z-index: 10; backdrop-filter: blur(4px); }
   </style>
 </head>
 <body>
-
-  <div class="watermark">✦ HATHOR · 雪地</div>
-  
-  <!-- GAZE 指示器 -->
-  <div class="gaze-indicator"></div>
-  <div class="gaze-ring" id="gazeRing"></div>
-
-  <!-- 控制面板 -->
-  <div class="control-panel-wrapper">
-    <button id="panelToggleBtn" class="panel-toggle-btn">▸ SHOW CONTROLS</button>
-    <div class="control-panel collapsed" id="controlPanel">
-      <div class="slider-container">
-        <label>◈ GAZE SPEED</label>
-        <input type="range" id="gazeSpeedSlider" min="0.5" max="3" step="0.1" value="4">
-        <div class="value-display" id="gazeSpeedValue">SPEED: 1.5</div>
-      </div>
-      <button id="gazeToggleBtn" class="action-btn" style="margin-top:4px;">
-        <span class="btn-text">
-          <span id="gazeStatusLed" class="status-led active"></span>
-          <span id="gazeBtnText">👁 GAZE MOVE ON</span>
-        </span>
-      </button>
-      <div class="keyboard-hint">
-        <span class="highlight">⌨️</span> &nbsp;<span class="key">WASD</span> = move &nbsp;·&nbsp; <span class="key">G</span> = gaze toggle
-      </div>
-    </div>
-  </div>
-
-  <!-- A-Frame 场景 -->
   <a-scene
-    background="color: #000000"
+    background="color: #87ceeb"
     renderer="antialias: true; colorManagement: true"
     vr-mode-ui="enabled: true"
     device-orientation-permission-ui="enabled: true"
+    gridHelper="enabled: false"
   >
 
-    <!-- 资源 -->
+    <!-- 天空盒子 -->
+    <a-sky src="./F1/f1.png" rotation="0 -30 0"></a-sky>
+
+    <!-- ASSETS -->
     <a-assets>
-      <img id="panoramaImg" src="F1/f1.png" crossorigin="anonymous">
-      <!-- 雪地地面 -->
-      <a-asset-item id="snowGround" src="model/雪地.glb"></a-asset-item>
+      <a-asset-item id="snowGround" src="./model/雪地.glb"></a-asset-item>
+      <a-asset-item id="unpackModel" src="./model/拆封.glb"></a-asset-item>
+      <a-asset-item id="alienPlant" src="./model/外星植物.glb"></a-asset-item>
+      <a-asset-item id="figTree" src="./model/无花果树.glb"></a-asset-item>
+      <a-asset-item id="angelEye" src="./model/天使之眼.glb"></a-asset-item>
+      <a-asset-item id="crystal" src="./model/紫晶石.glb"></a-asset-item>
+      <!-- 新增物品 -->
+      <a-asset-item id="silverDistiller" src="./model/银蒸馏器.glb"></a-asset-item>
+      <a-asset-item id="bloodyGoblet" src="./model/血腥酒杯.glb"></a-asset-item>
+      <a-asset-item id="egyptClay" src="./model/埃及土块.glb"></a-asset-item>
+      <a-asset-item id="box" src="./model/匣子.glb"></a-asset-item>
+      <a-asset-item id="mirror" src="./model/镜子.glb"></a-asset-item>
+      <a-asset-item id="tornBook" src="./model/破烂书.glb"></a-asset-item>
+      <a-asset-item id="alienChalice" src="./model/异形圣杯.glb"></a-asset-item>
+      <a-asset-item id="copperBrooch" src="./model/铜胸针.glb"></a-asset-item>
+      <a-asset-item id="grapeEarring" src="./model/葡萄耳环.glb"></a-asset-item>
+      <a-asset-item id="censer" src="./model/香炉.glb"></a-asset-item>
+      <a-asset-item id="copperBowl" src="./model/铜碗.glb"></a-asset-item>
+      <a-asset-item id="turquoiseLion" src="./model/绿松石狮子.glb"></a-asset-item>
+      <a-asset-item id="oneEaredAlpaca" src="./model/独耳金羊驼.glb"></a-asset-item>
+      <a-asset-item id="goldCandlestick" src="./model/金烛台.glb"></a-asset-item>
+      <a-asset-item id="alienLiddedCup" src="./model/异形盖杯.glb"></a-asset-item>
     </a-assets>
 
-    <!-- 全景背景 -->
-    <a-sky src="#panoramaImg" rotation="0 -90 0"></a-sky>
-
-    <!-- ===== 雪地地面 ===== -->
+    <!-- 雪地地面 -->
     <a-entity 
       gltf-model="#snowGround" 
-      position="0 -7 0" 
-      scale="0.7 0.7 0.7"
-      rotation="0 0 0"
-      class="ground-entity"
+      position="0 -4 0" 
+      rotation="0 0 0" 
+      scale="1 1 1"
+      shadow
     ></a-entity>
 
-    <!-- ===== 光照 ===== -->
-    <a-entity light="type: ambient; color: #8090B0; intensity: 1.0"></a-entity>
-    
-    <!-- 主方向光 -->
-    <a-entity light="type: directional; color: #FFFFFF; intensity: 1.5; position: 0 8 6"></a-entity>
-    <a-entity light="type: directional; color: #FFEECC; intensity: 0.8; position: 3 6 -4"></a-entity>
-    <a-entity light="type: directional; color: #CCDDFF; intensity: 0.6; position: -3 6 -4"></a-entity>
-    
-    <!-- 补光 -->
-    <a-entity light="type: directional; color: #AABBFF; intensity: 0.4; position: 0 -2 0"></a-entity>
-    
-    <!-- 点光源 -->
-    <a-point-light position="0 3 2" intensity="1.2" color="#FFFFFF" distance="20"></a-point-light>
+    <!-- ★★★ 紫晶石 - 摆满地面 ★★★ -->
+    <a-entity gltf-model="#crystal" position="-2 -3.5 2" rotation="0 0 0" scale="0.8 0.8 0.8" shadow></a-entity>
+    <a-entity gltf-model="#crystal" position="3 -3.5 -1" rotation="0 0 0" scale="1 1 1" shadow></a-entity>
+    <a-entity gltf-model="#crystal" position="-1 -3.5 -3" rotation="0 0 0" scale="0.9 0.9 0.9" shadow></a-entity>
+    <a-entity gltf-model="#crystal" position="4 -3.5 3" rotation="0 0 0" scale="1.1 1.1 1.1" shadow></a-entity>
+    <a-entity gltf-model="#crystal" position="-4 -3.5 -2" rotation="0 0 0" scale="0.7 0.7 0.7" shadow></a-entity>
+    <a-entity gltf-model="#crystal" position="5 -3.5 -4" rotation="0 0 0" scale="0.9 0.9 0.9" shadow></a-entity>
+    <a-entity gltf-model="#crystal" position="-5 -3.5 4" rotation="0 0 0" scale="1.2 1.2 1.2" shadow></a-entity>
+    <a-entity gltf-model="#crystal" position="0 -3.5 5" rotation="0 0 0" scale="0.8 0.8 0.8" shadow></a-entity>
+    <a-entity gltf-model="#crystal" position="6 -3.5 1" rotation="0 0 0" scale="1 1 1" shadow></a-entity>
+    <a-entity gltf-model="#crystal" position="-6 -3.5 -1" rotation="0 0 0" scale="1.1 1.1 1.1" shadow></a-entity>
 
-    <!-- ===== 玩家控制器 - WASD + GAZE ===== -->
-    <a-entity id="rig" position="0 0.004 0">
-      <a-camera id="camera" look-controls wasd-controls-enabled="true" wasd-controls-acceleration="20" wasd-controls-deceleration="10">
+    <!-- ★★★ 所有浮动物品 - 缩小版，上下浮动 ★★★ -->
+    
+    <!-- 银蒸馏器 -->
+    <a-entity gltf-model="#silverDistiller" position="-8 3 2" rotation="0 0 0" scale="0.05 0.05 0.05" shadow>
+      <a-animation attribute="position" to="-8 4 2" dur="2000" direction="alternate" repeat="indefinite" easing="ease-in-out"></a-animation>
+    </a-entity>
+    
+    <!-- 血腥酒杯 -->
+    <a-entity gltf-model="#bloodyGoblet" position="4 -1 -27" rotation="0 0 0" scale="2 2 2" shadow>
+      <a-animation attribute="position" to="7 3.5 -3" dur="1800" direction="alternate" repeat="indefinite" easing="ease-in-out"></a-animation>
+    </a-entity>
+    
+    <!-- 埃及土块 -->
+    <a-entity gltf-model="#egyptClay" position="-4 2.8 7" rotation="0 0 0" scale="0.5 0.5 0.5" shadow>
+      <a-animation attribute="position" to="-4 3.8 7" dur="2200" direction="alternate" repeat="indefinite" easing="ease-in-out"></a-animation>
+    </a-entity>
+    
+    <!-- 匣子 -->
+    <a-entity gltf-model="#box" position="5 3.2 6" rotation="0 0 0" scale="14 14 14" shadow>
+      <a-animation attribute="position" to="5 4.2 6" dur="1900" direction="alternate" repeat="indefinite" easing="ease-in-out"></a-animation>
+    </a-entity>
+    
+    <!-- 镜子 -->
+    <a-entity gltf-model="#mirror" position="-4 2.6 -15" rotation="0 0 0" scale="4 4 4" shadow>
+      <a-animation attribute="position" to="-6 3.6 -5" dur="2100" direction="alternate" repeat="indefinite" easing="ease-in-out"></a-animation>
+    </a-entity>
+    
+    <!-- 破烂书 -->
+    <a-entity gltf-model="#tornBook" position="6 2.9 -60" rotation="0 0 0" scale="0.1 0.1 0.1" shadow>
+      <a-animation attribute="position" to="6 3.9 -6" dur="1700" direction="alternate" repeat="indefinite" easing="ease-in-out"></a-animation>
+    </a-entity>
+    
+    <!-- 异形圣杯 -->
+    <a-entity gltf-model="#alienChalice" position="9 3.4 17" rotation="0 0 0" scale="0.01 0.01 0.01" shadow>
+      <a-animation attribute="position" to="-9 4.4 -2" dur="2300" direction="alternate" repeat="indefinite" easing="ease-in-out"></a-animation>
+    </a-entity>
+    
+    <!-- 铜胸针 -->
+    <a-entity gltf-model="#copperBrooch" position="9 2.7 2" rotation="0 0 0" scale="0.1 0.1 0.1" shadow>
+      <a-animation attribute="position" to="9 3.7 2" dur="2000" direction="alternate" repeat="indefinite" easing="ease-in-out"></a-animation>
+    </a-entity>
+    
+    <!-- 葡萄耳环 -->
+    <a-entity gltf-model="#grapeEarring" position="-3 3.1 8" rotation="0 0 0" scale="0.1 0.1 0.1" shadow>
+      <a-animation attribute="position" to="-3 4.1 -8" dur="1850" direction="alternate" repeat="indefinite" easing="ease-in-out"></a-animation>
+    </a-entity>
+    
+    <!-- 香炉 -->
+    <a-entity gltf-model="#censer" position="3 2.4 8" rotation="0 0 0" scale="1 1 1" shadow>
+      <a-animation attribute="position" to="3 3.4 8" dur="2150" direction="alternate" repeat="indefinite" easing="ease-in-out"></a-animation>
+    </a-entity>
+    
+    <!-- 铜碗 -->
+    <a-entity gltf-model="#copperBowl" position="-7 3.6 47" rotation="0 0 0" scale="1 1 1" shadow>
+      <a-animation attribute="position" to="-7 4.6 5" dur="1950" direction="alternate" repeat="indefinite" easing="ease-in-out"></a-animation>
+    </a-entity>
+    
+    <!-- 绿松石狮子 -->
+    <a-entity gltf-model="#turquoiseLion" position="8 2.8 -2" rotation="0 0 0" scale="17 17 17" shadow>
+      <a-animation attribute="position" to="8 3.8 -4" dur="2050" direction="alternate" repeat="indefinite" easing="ease-in-out"></a-animation>
+    </a-entity>
+    
+    <!-- 独耳金羊驼 -->
+    <a-entity gltf-model="#oneEaredAlpaca" position="-5 3.3 -7" rotation="0 0 0" scale="0.5 0.5 0.5" shadow>
+      <a-animation attribute="position" to="-5 4.3 -7" dur="2250" direction="alternate" repeat="indefinite" easing="ease-in-out"></a-animation>
+    </a-entity>
+    
+    <!-- 金烛台 -->
+    <a-entity gltf-model="#goldCandlestick" position="4 2.5 -8" rotation="0 0 0" scale="11 11 11" shadow>
+      <a-animation attribute="position" to="4 3.5 -8" dur="1750" direction="alternate" repeat="indefinite" easing="ease-in-out"></a-animation>
+    </a-entity>
+    
+    <!-- 异形盖杯 -->
+    <a-entity gltf-model="#alienLiddedCup" position="-2 3.7 11" rotation="0 0 0" scale="0.1 0.1 0.1" shadow>
+      <a-animation attribute="position" to="-2 4.7 9" dur="2400" direction="alternate" repeat="indefinite" easing="ease-in-out"></a-animation>
+    </a-entity>
+
+    <!-- ★★★ 拆封模型 ★★★ -->
+    <a-entity 
+      gltf-model="#unpackModel" 
+      position="0 4 0" 
+      rotation="0 0 0" 
+      scale="7 7 7"
+      animation="property: rotation; to: 0 360 0; loop: true; dur: 8000; easing: linear"
+      shadow
+    ></a-entity>
+
+    <!-- ★★★ 天使之眼 ★★★ -->
+    <a-entity 
+      gltf-model="#angelEye" 
+      position="-10 70 3" 
+      rotation="0 0 0" 
+      scale="3 3 3"
+      animation="property: rotation; to: 0 360 0; loop: true; dur: 10000; easing: linear"
+      shadow
+    ></a-entity>
+
+    <!-- ★★★ 外星植物丛林 ★★★ -->
+    <a-entity gltf-model="#alienPlant" position="-18 14 10" rotation="0 0 0" scale="17 17 17" animation="property: rotation; to: 0 360 0; loop: true; dur: 15000; easing: linear" shadow></a-entity>
+    <a-entity gltf-model="#alienPlant" position="-22 14 -8" rotation="0 0 0" scale="17 17 17" animation="property: rotation; to: 0 360 0; loop: true; dur: 18000; easing: linear" shadow></a-entity>
+    <a-entity gltf-model="#alienPlant" position="20 14 -12" rotation="0 0 0" scale="17 17 17" animation="property: rotation; to: 0 360 0; loop: true; dur: 14000; easing: linear" shadow></a-entity>
+    <a-entity gltf-model="#alienPlant" position="24 14 8" rotation="0 0 0" scale="17 17 17" animation="property: rotation; to: 0 360 0; loop: true; dur: 20000; easing: linear" shadow></a-entity>
+    <a-entity gltf-model="#alienPlant" position="-10 14 -20" rotation="0 0 0" scale="17 17 17" animation="property: rotation; to: 0 360 0; loop: true; dur: 12000; easing: linear" shadow></a-entity>
+    <a-entity gltf-model="#alienPlant" position="12 14 -22" rotation="0 0 0" scale="17 17 17" animation="property: rotation; to: 0 360 0; loop: true; dur: 22000; easing: linear" shadow></a-entity>
+    <a-entity gltf-model="#alienPlant" position="-15 14 -15" rotation="0 0 0" scale="17 17 17" animation="property: rotation; to: 0 360 0; loop: true; dur: 17000; easing: linear" shadow></a-entity>
+    <a-entity gltf-model="#alienPlant" position="18 14 -18" rotation="0 0 0" scale="17 17 17" animation="property: rotation; to: 0 360 0; loop: true; dur: 19000; easing: linear" shadow></a-entity>
+    <a-entity gltf-model="#alienPlant" position="-35 14 18" rotation="0 0 0" scale="17 17 17" animation="property: rotation; to: 0 360 0; loop: true; dur: 25000; easing: linear" shadow></a-entity>
+    <a-entity gltf-model="#alienPlant" position="-40 14 -12" rotation="0 0 0" scale="17 17 17" animation="property: rotation; to: 0 360 0; loop: true; dur: 28000; easing: linear" shadow></a-entity>
+    <a-entity gltf-model="#alienPlant" position="-30 14 -28" rotation="0 0 0" scale="17 17 17" animation="property: rotation; to: 0 360 0; loop: true; dur: 23000; easing: linear" shadow></a-entity>
+    <a-entity gltf-model="#alienPlant" position="38 14 20" rotation="0 0 0" scale="17 17 17" animation="property: rotation; to: 0 360 0; loop: true; dur: 32000; easing: linear" shadow></a-entity>
+    <a-entity gltf-model="#alienPlant" position="42 14 -15" rotation="0 0 0" scale="17 17 17" animation="property: rotation; to: 0 360 0; loop: true; dur: 29000; easing: linear" shadow></a-entity>
+    <a-entity gltf-model="#alienPlant" position="32 14 -32" rotation="0 0 0" scale="17 17 17" animation="property: rotation; to: 0 360 0; loop: true; dur: 35000; easing: linear" shadow></a-entity>
+    <a-entity gltf-model="#alienPlant" position="-45 14 5" rotation="0 0 0" scale="17 17 17" animation="property: rotation; to: 0 360 0; loop: true; dur: 26000; easing: linear" shadow></a-entity>
+    <a-entity gltf-model="#alienPlant" position="45 14 -5" rotation="0 0 0" scale="17 17 17" animation="property: rotation; to: 0 360 0; loop: true; dur: 31000; easing: linear" shadow></a-entity>
+    <a-entity gltf-model="#alienPlant" position="-38 14 -25" rotation="0 0 0" scale="17 17 17" animation="property: rotation; to: 0 360 0; loop: true; dur: 27000; easing: linear" shadow></a-entity>
+    <a-entity gltf-model="#alienPlant" position="35 14 -28" rotation="0 0 0" scale="17 17 17" animation="property: rotation; to: 0 360 0; loop: true; dur: 30000; easing: linear" shadow></a-entity>
+    <a-entity gltf-model="#alienPlant" position="-55 14 25" rotation="0 0 0" scale="17 17 17" animation="property: rotation; to: 0 360 0; loop: true; dur: 40000; easing: linear" shadow></a-entity>
+    <a-entity gltf-model="#alienPlant" position="-58 14 -20" rotation="0 0 0" scale="17 17 17" animation="property: rotation; to: 0 360 0; loop: true; dur: 45000; easing: linear" shadow></a-entity>
+    <a-entity gltf-model="#alienPlant" position="-50 14 -40" rotation="0 0 0" scale="17 17 17" animation="property: rotation; to: 0 360 0; loop: true; dur: 38000; easing: linear" shadow></a-entity>
+    <a-entity gltf-model="#alienPlant" position="55 14 30" rotation="0 0 0" scale="17 17 17" animation="property: rotation; to: 0 360 0; loop: true; dur: 42000; easing: linear" shadow></a-entity>
+    <a-entity gltf-model="#alienPlant" position="60 14 -18" rotation="0 0 0" scale="17 17 17" animation="property: rotation; to: 0 360 0; loop: true; dur: 48000; easing: linear" shadow></a-entity>
+    <a-entity gltf-model="#alienPlant" position="50 14 -42" rotation="0 0 0" scale="17 17 17" animation="property: rotation; to: 0 360 0; loop: true; dur: 39000; easing: linear" shadow></a-entity>
+    <a-entity gltf-model="#alienPlant" position="-65 14 0" rotation="0 0 0" scale="17 17 17" animation="property: rotation; to: 0 360 0; loop: true; dur: 36000; easing: linear" shadow></a-entity>
+    <a-entity gltf-model="#alienPlant" position="65 14 0" rotation="0 0 0" scale="17 17 17" animation="property: rotation; to: 0 360 0; loop: true; dur: 44000; easing: linear" shadow></a-entity>
+
+    <!-- ★★★ 无花果树 ★★★ -->
+    <a-entity gltf-model="#figTree" position="-80 -4 50" rotation="0 0 0" scale="170 170 170" material="metalness: 0.8; roughness: 0.3; color: #ff6b6b" shadow></a-entity>
+    <a-entity gltf-model="#figTree" position="-90 -4 -30" rotation="0 0 0" scale="170 170 170" material="metalness: 0.7; roughness: 0.4; color: #ffd93d" shadow></a-entity>
+    <a-entity gltf-model="#figTree" position="-75 -4 -70" rotation="0 0 0" scale="170 170 170" material="metalness: 0.9; roughness: 0.2; color: #6bcb77" shadow></a-entity>
+    <a-entity gltf-model="#figTree" position="85 -4 60" rotation="0 0 0" scale="170 170 170" material="metalness: 0.6; roughness: 0.5; color: #4d96ff" shadow></a-entity>
+    <a-entity gltf-model="#figTree" position="95 -4 -40" rotation="0 0 0" scale="170 170 170" material="metalness: 0.8; roughness: 0.3; color: #9b59b6" shadow></a-entity>
+    <a-entity gltf-model="#figTree" position="80 -4 -80" rotation="0 0 0" scale="170 170 170" material="metalness: 0.7; roughness: 0.4; color: #1abc9c" shadow></a-entity>
+    <a-entity gltf-model="#figTree" position="-100 -4 10" rotation="0 0 0" scale="170 170 170" material="metalness: 0.9; roughness: 0.2; color: #e67e22" shadow></a-entity>
+    <a-entity gltf-model="#figTree" position="100 -4 -10" rotation="0 0 0" scale="170 170 170" material="metalness: 0.6; roughness: 0.5; color: #e74c3c" shadow></a-entity>
+    <a-entity gltf-model="#figTree" position="-10 -4 -100" rotation="0 0 0" scale="170 170 170" material="metalness: 0.8; roughness: 0.3; color: #2ecc71" shadow></a-entity>
+    <a-entity gltf-model="#figTree" position="20 -4 100" rotation="0 0 0" scale="170 170 170" material="metalness: 0.7; roughness: 0.4; color: #3498db" shadow></a-entity>
+    <a-entity gltf-model="#figTree" position="-110 -4 -60" rotation="0 0 0" scale="170 170 170" material="metalness: 0.9; roughness: 0.2; color: #f1c40f" shadow></a-entity>
+    <a-entity gltf-model="#figTree" position="110 -4 50" rotation="0 0 0" scale="170 170 170" material="metalness: 0.6; roughness: 0.5; color: #e84393" shadow></a-entity>
+    <a-entity gltf-model="#figTree" position="-95 -4 80" rotation="0 0 0" scale="170 170 170" material="metalness: 0.8; roughness: 0.3; color: #00b894" shadow></a-entity>
+    <a-entity gltf-model="#figTree" position="90 -4 -85" rotation="0 0 0" scale="170 170 170" material="metalness: 0.7; roughness: 0.4; color: #6c5ce7" shadow></a-entity>
+    <a-entity gltf-model="#figTree" position="-60 -4 -95" rotation="0 0 0" scale="170 170 170" material="metalness: 0.9; roughness: 0.2; color: #fd79a8" shadow></a-entity>
+    <a-entity gltf-model="#figTree" position="70 -4 90" rotation="0 0 0" scale="170 170 170" material="metalness: 0.6; roughness: 0.5; color: #fdcb6e" shadow></a-entity>
+
+    <!-- LIGHTS -->
+    <a-ambient-light intensity="1.2" color="#ffb6c1"></a-ambient-light>
+    <a-light type="hemisphere" intensity="1.0" color="#ff85a2" ground-color="#ff69b4"></a-light>
+    <a-directional-light position="0 10 20" intensity="1.8" color="#ff8da1"></a-directional-light>
+    <a-directional-light position="0 10 -20" intensity="1.8" color="#ff8da1"></a-directional-light>
+    <a-directional-light position="-20 10 0" intensity="1.8" color="#ff9eb5"></a-directional-light>
+    <a-directional-light position="20 10 0" intensity="1.8" color="#ff9eb5"></a-directional-light>
+    <a-directional-light position="0 25 0" intensity="1.5" color="#ffc0cb"></a-directional-light>
+    <a-directional-light position="0 -10 0" intensity="1.0" color="#ff69b4"></a-directional-light>
+    <a-directional-light position="-15 8 15" intensity="1.2" color="#ffaab8"></a-directional-light>
+    <a-directional-light position="15 8 -15" intensity="1.2" color="#ffaab8"></a-directional-light>
+    <a-directional-light position="-15 8 -15" intensity="1.2" color="#ffaab8"></a-directional-light>
+    <a-directional-light position="15 8 15" intensity="1.2" color="#ffaab8"></a-directional-light>
+    <a-light type="point" position="0 -2 0" intensity="0.8" color="#ff69b4" distance="30" decay="0.2"></a-light>
+    <a-light type="point" position="-12 -3 12" intensity="0.6" color="#ff8da1" distance="25" decay="0.2"></a-light>
+    <a-light type="point" position="12 -3 12" intensity="0.6" color="#ff8da1" distance="25" decay="0.2"></a-light>
+    <a-light type="point" position="-12 -3 -12" intensity="0.6" color="#ff8da1" distance="25" decay="0.2"></a-light>
+    <a-light type="point" position="12 -3 -12" intensity="0.6" color="#ff8da1" distance="25" decay="0.2"></a-light>
+
+    <!-- CAMERA -->
+    <a-entity id="rig" position="0 1.6 8">
+      <a-camera look-controls wasd-controls="acceleration: 30; fly: false; speed: 15">
         <a-cursor
-          id="gazeCursor"
           fuse="true"
-          fuse-timeout="1400"
+          fuse-timeout="2000"
           geometry="primitive: ring; radiusInner: 0.015; radiusOuter: 0.025"
-          material="color: #00ccff; shader: flat; opacity: 0.3"
-          raycaster="far: 20"
-        ></a-cursor>
+          material="color: white; shader: flat">
+        </a-cursor>
       </a-camera>
     </a-entity>
 
+    <!-- 传送标记 -->
+    <a-cylinder position="0 0.05 15" radius="2" height="0.05" material="color: #ff69b4; opacity: 0.4; transparent: true; emissive: #ff1493" smooth-teleport="target: 0 1.6 15"></a-cylinder>
+    <a-cylinder position="0 0.05 30" radius="2" height="0.05" material="color: #ff69b4; opacity: 0.4; transparent: true; emissive: #ff1493" smooth-teleport="target: 0 1.6 30"></a-cylinder>
+    <a-cylinder position="0 0.05 -5" radius="2" height="0.05" material="color: #ff69b4; opacity: 0.4; transparent: true; emissive: #ff1493" smooth-teleport="target: 0 1.6 -5"></a-cylinder>
+    <a-cylinder position="0 0.05 -15" radius="2" height="0.05" material="color: #ff69b4; opacity: 0.4; transparent: true; emissive: #ff1493" smooth-teleport="target: 0 1.6 -15"></a-cylinder>
+    <a-cylinder position="-15 0.05 0" radius="2" height="0.05" material="color: #ff69b4; opacity: 0.4; transparent: true; emissive: #ff1493" smooth-teleport="target: -15 1.6 0"></a-cylinder>
+    <a-cylinder position="15 0.05 0" radius="2" height="0.05" material="color: #ff69b4; opacity: 0.4; transparent: true; emissive: #ff1493" smooth-teleport="target: 15 1.6 0"></a-cylinder>
+
   </a-scene>
 
-  <script>
-    // ===== 控制面板逻辑 =====
-    document.addEventListener('DOMContentLoaded', function() {
-      // 面板切换
-      const panelToggleBtn = document.getElementById('panelToggleBtn');
-      const controlPanel = document.getElementById('controlPanel');
-      let panelVisible = false;
-
-      panelToggleBtn.addEventListener('click', () => {
-        panelVisible = !panelVisible;
-        if (panelVisible) {
-          controlPanel.classList.remove('collapsed');
-          panelToggleBtn.textContent = '▸ HIDE CONTROLS';
-        } else {
-          controlPanel.classList.add('collapsed');
-          panelToggleBtn.textContent = '▸ SHOW CONTROLS';
-        }
-      });
-
-      // GAZE 移动控制
-      const gazeToggleBtn = document.getElementById('gazeToggleBtn');
-      const gazeStatusLed = document.getElementById('gazeStatusLed');
-      const gazeBtnText = document.getElementById('gazeBtnText');
-      const gazeRing = document.getElementById('gazeRing');
-      let isGazeEnabled = true;
-
-      // 获取 cursor 元素
-      const cursor = document.querySelector('#gazeCursor');
-      
-      // 监听 fuse 事件
-      if (cursor) {
-        cursor.addEventListener('fusing', function(evt) {
-          if (!isGazeEnabled) return;
-          gazeRing.classList.add('active');
-        });
-
-        cursor.addEventListener('fuse', function(evt) {
-          if (!isGazeEnabled) return;
-          // 获取注视方向
-          const camera = document.querySelector('#camera');
-          if (!camera) return;
-          
-          const direction = new THREE.Vector3(0, 0, -1);
-          direction.applyQuaternion(camera.object3D.quaternion);
-          direction.y = 0;
-          direction.normalize();
-          
-          const rig = document.querySelector('#rig');
-          if (!rig) return;
-          
-          const speed = parseFloat(document.getElementById('gazeSpeedSlider').value) || 1.5;
-          const currentPos = rig.object3D.position;
-          const newPos = currentPos.clone().add(direction.multiplyScalar(speed * 0.15));
-          
-          // 边界限制 (范围 -6 到 6)
-          newPos.x = Math.max(-6, Math.min(6, newPos.x));
-          newPos.z = Math.max(-6, Math.min(6, newPos.z));
-          
-          // 平滑移动
-          rig.object3D.position.copy(newPos);
-          
-          // 视觉反馈
-          gazeRing.style.borderColor = 'rgba(0, 210, 255, 0.9)';
-          gazeRing.style.boxShadow = '0 0 30px rgba(0, 210, 255, 0.4)';
-          setTimeout(() => {
-            gazeRing.style.borderColor = 'rgba(0, 210, 255, 0.2)';
-            gazeRing.style.boxShadow = 'none';
-          }, 300);
-          
-          gazeRing.classList.remove('active');
-        });
-
-        cursor.addEventListener('mouseup', function(evt) {
-          gazeRing.classList.remove('active');
-        });
-
-        cursor.addEventListener('mouseleave', function(evt) {
-          gazeRing.classList.remove('active');
-        });
-      }
-
-      function toggleGaze() {
-        isGazeEnabled = !isGazeEnabled;
-        if (isGazeEnabled) {
-          gazeStatusLed.classList.add('active');
-          gazeBtnText.innerText = '👁 GAZE MOVE ON';
-          gazeToggleBtn.classList.add('pressed-rotate');
-        } else {
-          gazeStatusLed.classList.remove('active');
-          gazeBtnText.innerText = '👁 GAZE MOVE OFF';
-          gazeToggleBtn.classList.remove('pressed-rotate');
-        }
-      }
-
-      gazeToggleBtn.addEventListener('click', toggleGaze);
-      
-      // 键盘快捷键 G
-      document.addEventListener('keydown', (e) => {
-        if (e.key === 'g' || e.key === 'G') {
-          e.preventDefault();
-          toggleGaze();
-        }
-      });
-
-      // GAZE 速度滑块
-      const gazeSpeedSlider = document.getElementById('gazeSpeedSlider');
-      const gazeSpeedValue = document.getElementById('gazeSpeedValue');
-      
-      gazeSpeedSlider.addEventListener('input', (e) => {
-        const val = parseFloat(e.target.value);
-        gazeSpeedValue.innerText = `SPEED: ${val.toFixed(1)}`;
-      });
-
-      // 默认折叠面板
-      controlPanel.classList.add('collapsed');
-      
-      // 添加样式
-      const style = document.createElement('style');
-      style.textContent = `
-        .action-btn.pressed-rotate {
-          background: rgba(255, 100, 180, 0.35);
-          border-color: #ff64b4;
-          box-shadow: 0 0 20px rgba(255, 100, 180, 0.35);
-          color: #ffb0d8;
-        }
-        .action-btn.pressed-rotate:hover {
-          background: rgba(255, 100, 180, 0.5);
-        }
-      `;
-      document.head.appendChild(style);
-    });
-
-    console.log('✦ Hathor 雪地已加载');
-    console.log('📖 操作提示: WASD移动 | 鼠标拖拽视角 | G键切换GAZE移动');
-    console.log('👁 GAZE移动: 注视屏幕中心1.4秒后向该方向移动');
-  </script>
+  <div class="controls-hint">🟣 WASD移动 · 凝视传送 · 速度15</div>
+  <div class="info">💎 15件悬浮物品 · 缩小版 · 上下浮动 · 无自转</div>
+  <script src="script.js"></script>
 </body>
 </html>
