@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  <title>A-Frame VR · 传送阵列 + 物品信息 + 音效</title>
+  <script src="https://aframe.io/releases/1.0.4/aframe.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/aframe-event-set-component@5.0.0/dist/aframe-event-set-component.min.js"></script>
+  <style>
+    body { margin: 0; overflow: hidden; }
+    .info { position: absolute; bottom: 20px; left: 0; right: 0; text-align: center; color: rgba(255,255,255,0.8); font-family: sans-serif; font-size: 14px; pointer-events: none; text-shadow: 0 1px 4px rgba(0,0,0,0.5); z-index: 10; }
+    .controls-hint { position: absolute; top: 20px; left: 50%; transform: translateX(-50%); color: rgba(255,255,255,0.7); font-family: sans-serif; font-size: 13px; background: rgba(0,0,0,0.4); padding: 8px 16px; border-radius: 20px; pointer-events: none; z-index: 10; backdrop-filter: blur(4px); }
+    #info-panel { position: absolute; bottom: 80px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.75); color: #fff; padding: 16px 30px; border-radius: 12px; font-family: 'Segoe UI', sans-serif; font-size: 18px; pointer-events: none; z-index: 20; backdrop-filter: blur(8px); border: 1px solid rgba(255,105,180,0.4); opacity: 0; transition: opacity 0.5s; max-width: 500px; text-align: center; }
+    #info-panel.visible { opacity: 1; }
+    #info-panel .sub { font-size: 13px; color: #ffb6c1; margin-top: 4px; display: block; }
+  </style>
+</head>
+<body>
+  <a-scene
+    background="color: #87ceeb"
+    renderer="antialias: true; colorManagement: true"
+    vr-mode-ui="enabled: true"
+    device-orientation-permission-ui="enabled: true"
+    gridHelper="enabled: false"
+  >
+
+    <!-- 音效系统 -->
+    <a-entity id="sound-system">
+      <!-- 环境音 - 循环播放 -->
+      <a-sound src="https://cdn.aframe.io/audio/ambient/forest.mp3" autoplay="true" loop="true" volume="0.3" position="0 0 0"></a-sound>
+      <!-- 点击/凝视音效 -->
+      <a-sound id="click-sound" src="https://cdn.aframe.io/audio/click.wav" volume="0.5"></a-sound>
+      <!-- 传送音效 -->
+      <a-sound id="teleport-sound" src="https://cdn.aframe.io/audio/teleport.wav" volume="0.4"></a-sound>
+      <!-- 信息弹出音效 -->
+      <a-sound id="info-sound" src="https://cdn.aframe.io/audio/notification.wav" volume="0.3"></a-sound>
+    </a-entity>
+
+    <!-- 天空盒子 -->
+    <a-sky src="./F1/die.png" rotation="0 -30 0"></a-sky>
+
+    <!-- CAMERA -->
+    <a-entity id="rig" position="0 1.6 8">
+      <a-camera look-controls wasd-controls="acceleration: 30; fly: false; speed: 15">
+        <a-cursor
+          fuse="true"
+          fuse-timeout="1000"
+          geometry="primitive: ring; radiusInner: 0.015; radiusOuter: 0.025"
+          material="color: white; shader: flat">
+        </a-cursor>
+      </a-camera>
+    </a-entity>
+
+  </a-scene>
+
+  <!-- 信息面板 -->
+  <div id="info-panel"></div>
+
+  <div class="controls-hint">You’re dead</div>
+  <div class="info">These are just your vomit.</div>
+  <script src="script.js"></script>
+</body>
+</html>
