@@ -1,0 +1,876 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- 新增这行！必须放在最前面 -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta charset="utf-8">
+    <title>DEADDRUNK</title>
+    <script src="global-vr.js"></script>
+    <!-- 其他原有代码 -->
+ 
+    <style>
+        @font-face {
+            font-family: 'AkzidenzGrotesk-Extended';
+            src: url('AkzidenzGrotesk-Extended.otf') format('opentype');
+            font-weight: normal;
+            font-style: normal;
+        }
+        @font-face {
+            font-family: 'AkzidenzGrotesk-LightExtended';
+            src: url('AkzidenzGrotesk-LightExtended.otf') format('opentype');
+            font-weight: 300;
+            font-style: normal;
+        }
+
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #000;
+            font-family: 'AkzidenzGrotesk-LightExtended', 'Helvetica Neue', Arial, sans-serif;
+        }
+        canvas {
+            display: block;
+        }
+
+        .control-panel-wrapper {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            z-index: 100;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+        }
+
+        .control-panel {
+            background: rgba(20, 20, 30, 0.4);
+            backdrop-filter: blur(4px);
+            border-radius: 24px;
+            padding: 16px 20px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6);
+            min-width: 220px;
+            font-family: 'AkzidenzGrotesk-Extended', monospace;
+            letter-spacing: 0.5px;
+            transition: opacity 0.3s, transform 0.3s, max-height 0.3s;
+            user-select: none;
+            max-height: 600px;
+            overflow: hidden;
+            transform-origin: bottom right;
+        }
+        .control-panel.collapsed {
+            max-height: 0;
+            padding: 0 20px;
+            opacity: 0;
+            transform: scale(0.95);
+            border-width: 0;
+            pointer-events: none;
+        }
+
+        .panel-toggle-btn {
+            background: rgba(20, 20, 30, 0.45);
+            backdrop-filter: blur(4px);
+            border: 1px solid rgba(255, 255, 255, 0.25);
+            color: #ccc;
+            padding: 6px 16px;
+            border-radius: 40px;
+            font-size: 12px;
+            font-family: 'AkzidenzGrotesk-Extended', monospace;
+            letter-spacing: 0.8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            margin-bottom: 8px;
+            touch-action: manipulation;
+        }
+        .panel-toggle-btn:hover {
+            background: rgba(255, 255, 255, 0.15);
+            color: #fff;
+            border-color: rgba(255, 255, 255, 0.5);
+        }
+
+        .slider-container {
+            margin-bottom: 16px;
+        }
+        .slider-container label {
+            display: block;
+            color: #eee;
+            font-size: 12px;
+            margin-bottom: 8px;
+            letter-spacing: 1px;
+            font-family: 'AkzidenzGrotesk-Extended', monospace;
+        }
+        input[type="range"] {
+            width: 100%;
+            cursor: pointer;
+            background: #2a2a3a;
+            height: 3px;
+            border-radius: 3px;
+            -webkit-appearance: none;
+        }
+        input[type="range"]:focus {
+            outline: none;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: #00d2ff;
+            cursor: pointer;
+            border: none;
+            box-shadow: 0 0 6px #00d2ff;
+        }
+        .value-display {
+            text-align: right;
+            font-size: 11px;
+            color: #aaa;
+            margin-top: 4px;
+            font-family: monospace;
+        }
+
+        .action-btn {
+            background: rgba(0, 210, 255, 0.15);
+            border: 1px solid rgba(0, 210, 255, 0.4);
+            color: #88ddff;
+            padding: 6px 14px;
+            border-radius: 40px;
+            font-size: 12px;
+            font-family: 'AkzidenzGrotesk-Extended', monospace;
+            letter-spacing: 0.8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            width: 100%;
+            margin-top: 8px;
+            backdrop-filter: blur(4px);
+            touch-action: manipulation;
+        }
+        .action-btn:hover {
+            background: #00aaff;
+            color: #000;
+            border-color: #00aaff;
+            box-shadow: 0 0 10px rgba(0,170,255,0.5);
+        }
+        .action-btn:active {
+            transform: scale(0.96);
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 8px;
+            margin-top: 8px;
+        }
+        .btn-group .action-btn {
+            flex: 1;
+            margin-top: 0;
+            text-align: center;
+            padding: 8px 6px;
+            font-size: 11px;
+            transition: background 0.15s, transform 0.1s, border-color 0.2s, box-shadow 0.2s;
+            letter-spacing: 0.5px;
+        }
+        .btn-group .action-btn:active {
+            transform: scale(0.94);
+        }
+        .btn-group .action-btn.view-btn {
+            flex: 0.65;
+            min-width: 52px;
+        }
+
+        /* Pressed states - pink/purple/blue palette */
+        .action-btn.pressed-spread {
+            background: rgba(200, 80, 255, 0.4);
+            border-color: #c850ff;
+            box-shadow: 0 0 20px rgba(200, 80, 255, 0.3);
+            color: #e8b0ff;
+        }
+        .action-btn.pressed-view {
+            background: rgba(255, 100, 180, 0.4);
+            border-color: #ff64b4;
+            box-shadow: 0 0 20px rgba(255, 100, 180, 0.3);
+            color: #ffb0d8;
+        }
+        .action-btn.pressed-tighten {
+            background: rgba(80, 180, 255, 0.4);
+            border-color: #50b4ff;
+            box-shadow: 0 0 20px rgba(80, 180, 255, 0.3);
+            color: #b0dcff;
+        }
+
+        /* Auto-rotate ON state - using pink, much more visible */
+        .action-btn.pressed-rotate {
+            background: rgba(255, 100, 180, 0.35);
+            border-color: #ff64b4;
+            box-shadow: 0 0 20px rgba(255, 100, 180, 0.35);
+            color: #ffb0d8;
+        }
+
+        .status-led {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background-color: #888;
+            margin-right: 6px;
+            box-shadow: none;
+            transition: background-color 0.2s, box-shadow 0.2s;
+        }
+        .status-led.active {
+            background-color: #cc77ff;
+            box-shadow: 0 0 12px #cc77ff, 0 0 24px rgba(170, 102, 255, 0.3);
+        }
+
+        .btn-text {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .keyboard-hint {
+            font-size: 10px;
+            color: #999;
+            text-align: center;
+            margin-top: 10px;
+            border-top: 1px solid rgba(255,255,255,0.08);
+            padding-top: 10px;
+            font-family: monospace;
+            letter-spacing: 0.5px;
+            line-height: 1.8;
+        }
+        .keyboard-hint span.highlight {
+            color: #cc99ff;
+            font-weight: bold;
+        }
+        .keyboard-hint span.key {
+            color: #88ddff;
+            font-weight: bold;
+        }
+
+/* --- 打字机特效样式 --- */
+        .intro-text-container {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 80%;
+            max-width: 800px;
+            text-align: center;
+            color: rgba(255, 255, 255, 0.9);
+            /* 使用你原有的字体 */
+            font-family: 'AkzidenzGrotesk-LightExtended', 'Helvetica Neue', Arial, sans-serif;
+            font-size: 18px;
+            line-height: 1.8;
+            letter-spacing: 1px;
+            z-index: 1000;
+            /* 确保文字不会阻挡用户的鼠标/触摸拖拽操作 */
+            pointer-events: none; 
+            opacity: 1;
+            /* 渐渐消失的过渡动画时长设为 2秒 */
+            transition: opacity 2s ease-in-out;
+            text-shadow: 0 4px 15px rgba(0,0,0,0.9);
+        }
+
+        /* 消失状态的类名 */
+        .intro-text-container.fade-out {
+            opacity: 0;
+        }
+
+        /* 打字机光标特效 */
+        .intro-text-container::after {
+            content: '|';
+            animation: blink 0.8s step-end infinite;
+            margin-left: 4px;
+            color: #00d2ff; /* 光标颜色，和你的面板UI呼应 */
+        }
+        /* 打字完成后隐藏光标 */
+        .intro-text-container.hide-cursor::after {
+            display: none;
+        }
+.final-text-container {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 80%;
+    text-align: center;
+    color: #FF008C; /* 你想要的粉色 */
+    font-size: 22px; /* 字号稍微大一点更明显 */
+    font-weight: bold;
+    text-shadow: 0 0 15px #FF008C, 0 0 30px #FF008C; /* 发光特效 */
+    opacity: 0; /* 初始透明度为0 */
+    transition: opacity 3s ease-in-out; /* 3秒缓慢显现 */
+    z-index: 1001;
+    pointer-events: none;
+}
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0; }
+        }
+
+        @media (max-width: 600px) {
+            .intro-text-container { font-size: 13px; width: 90%; }
+        }
+
+        @media (max-width: 600px) {
+            .control-panel { padding: 12px 16px; min-width: 170px; }
+            .action-btn { font-size: 10px; padding: 5px 10px; }
+            .slider-container label { font-size: 10px; }
+            .btn-group { gap: 6px; }
+            .btn-group .action-btn { font-size: 10px; padding: 6px 4px; letter-spacing: 0.3px; }
+            .btn-group .action-btn.view-btn { flex: 0.7; min-width: 40px; }
+            .control-panel-wrapper { bottom: 16px; right: 16px; }
+            .keyboard-hint { font-size: 9px; }
+        }
+    
+        /* 居中弹窗样式 (无黑屏，风格统一) */
+        #choiceOverlay {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(20, 20, 30, 0.75);
+            backdrop-filter: blur(12px);
+            border-radius: 24px;
+            padding: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8);
+            width: 80%;
+            max-width: 500px;
+            z-index: 2000;
+            text-align: center;
+        }
+
+        #choiceOverlay p {
+            color: #eee;
+            font-size: 16px;
+            line-height: 1.6;
+            margin-bottom: 24px;
+            font-family: 'AkzidenzGrotesk-LightExtended', sans-serif;
+            letter-spacing: 0.5px;
+        }
+
+        .modal-btn-group {
+            display: flex;
+            justify-content: center;
+            gap: 16px;
+        }
+
+        .modal-btn {
+            background: rgba(0, 210, 255, 0.15);
+            border: 1px solid rgba(0, 210, 255, 0.4);
+            color: #88ddff;
+            padding: 10px 20px;
+            border-radius: 40px;
+            font-size: 11px;
+            font-family: 'AkzidenzGrotesk-Extended', monospace;
+            letter-spacing: 0.8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .modal-btn:hover {
+            background: #00aaff;
+            color: #000;
+            border-color: #00aaff;
+            box-shadow: 0 0 15px rgba(0,170,255,0.6);
+        }
+
+        .modal-btn.primary {
+            background: rgba(255, 100, 180, 0.2);
+            border-color: #ff64b4;
+            color: #ffb0d8;
+        }
+
+        .modal-btn.primary:hover {
+            background: #ff64b4;
+            color: #000;
+            border-color: #ff64b4;
+            box-shadow: 0 0 15px rgba(255,100,180,0.6);
+        }
+        
+        @media (max-width: 600px) {
+            .modal-btn-group { flex-direction: column; }
+            #choiceOverlay { width: 90%; padding: 20px; }
+            #choiceOverlay p { font-size: 14px; }
+        }
+        /* --- 手机端自适应逻辑 --- */
+@media (max-width: 600px) {
+    #choiceOverlay {
+        width: 85%;            /* 手机上宽度占85% */
+        padding: 20px 15px;    /* 缩小内边距 */
+        top: 50%;              /* 依然居中 */
+    }
+
+    #choiceOverlay p {
+        font-size: 14px;       /* 减小字号，避免文字过长 */
+        margin-bottom: 20px;
+    }
+
+    .modal-btn-group {
+        flex-direction: column; /* 按钮改为垂直排列 */
+        gap: 10px;              /* 缩小按钮间距 */
+    }
+
+    .modal-btn {
+        width: 100%;            /* 按钮宽度占满 */
+        padding: 12px 0;        /* 增加点击区域高度，方便手指操作 */
+        font-size: 12px;
+    }
+}
+</style>
+    
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+          "@mkkellogg/gaussian-splats-3d": "https://unpkg.com/@mkkellogg/gaussian-splats-3d/build/gaussian-splats-3d.module.js"
+        }
+      }
+    </script>
+</head>
+<body>
+<div id="introTextContainer" class="intro-text-container"></div>
+<div id="finalTextContainer" class="final-text-container"></div>
+    <div class="control-panel-wrapper">
+        <button id="panelToggleBtn" class="panel-toggle-btn">▸ SHOW CONTROLS</button>
+
+        <div class="control-panel" id="controlPanel">
+            <div class="slider-container">
+                <label>◉ CAMERA DISTANCE</label>
+                <input type="range" id="distanceSlider" min="1.5" max="12" step="0.01" value="5.0">
+                <div class="value-display" id="distanceValue">DIST: 5.00</div>
+            </div>
+
+            <div class="slider-container">
+                <label>◈ ROTATION SPEED</label>
+                <input type="range" id="speedSlider" min="0.001" max="0.02" step="0.001" value="0.005">
+                <div class="value-display" id="speedValue">SPEED: 0.005</div>
+            </div>
+
+            <div style="margin-bottom: 12px;">
+                <label style="color:#eee; font-size:12px; letter-spacing:1px; display:block; margin-bottom:6px;">✦ CONTROLS</label>
+                <div class="btn-group">
+                    <button id="bloomMinusBtn" class="action-btn" data-code="Minus">⊖ SPREAD</button>
+                    <button id="viewToggleBtn" class="action-btn view-btn">VIEW</button>
+                    <button id="bloomPlusBtn" class="action-btn" data-code="Equal">⊕ TIGHTEN</button>
+                </div>
+                <div class="value-display" style="margin-top:4px; font-size:10px; color:#777;">hold SPREAD/TIGHTEN for continuous effect</div>
+            </div>
+
+            <button id="autoRotateBtn" class="action-btn">
+    <span class="btn-text">
+        <span id="statusLed" class="status-led active"></span> 
+        <span id="rotateBtnText">⟳ AUTO-ROTATE ON</span>
+    </span>
+</button>
+
+            <div class="keyboard-hint">
+                <span class="highlight">⌨️</span> &nbsp;<span class="key">+</span> / <span class="key">−</span> = spread / tighten &nbsp;·&nbsp; <span class="key">P</span> = view toggle
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import * as GaussianSplats3D from '@mkkellogg/gaussian-splats-3d';
+
+        const viewer = new GaussianSplats3D.Viewer({
+            'cameraUp': [0, 1, 0],
+            'initialCameraPosition': [0, 2, 5],
+            'initialCameraLookAt': [0, 0, 0],
+            'sharedMemoryForWorkers': false
+        });
+
+        let currentAzimuth = 0;
+        let currentPolar = Math.PI / 3;
+        let isAutoRotating = true;
+        let autoRotateSpeed = 0.004;
+        let animationId = null;
+        let cameraDistance = 5.0;
+        
+        let mainCamera = null;
+        let targetPoint = new THREE.Vector3(0, 0, 0);
+        
+        function updateAnglesFromCamera() {
+            if (!mainCamera) return;
+            const offset = new THREE.Vector3().subVectors(mainCamera.position, targetPoint);
+            const radius = offset.length();
+            cameraDistance = radius;
+            currentAzimuth = Math.atan2(offset.x, offset.z);
+            currentPolar = Math.acos(Math.min(1, Math.max(-1, offset.y / radius)));
+        }
+        
+        function updateCameraFromAngles() {
+            if (window.isVRMode) return; // 👈 加上这行：进入VR后，原来的自动旋转就不会抢镜头了
+            
+            if (!mainCamera) return;
+            const x = cameraDistance * Math.sin(currentPolar) * Math.sin(currentAzimuth);
+            const z = cameraDistance * Math.sin(currentPolar) * Math.cos(currentAzimuth);
+            const y = cameraDistance * Math.cos(currentPolar);
+            mainCamera.position.set(x, y, z);
+            mainCamera.lookAt(targetPoint);
+            if (viewer && viewer.camera) {
+                viewer.camera.position.copy(mainCamera.position);
+                viewer.camera.lookAt(targetPoint);
+            }
+        }
+        
+        function setCameraDistance(dist) {
+            if (!mainCamera) return;
+            cameraDistance = Math.min(12, Math.max(1.5, dist));
+            updateCameraFromAngles();
+            document.getElementById('distanceValue').innerText = `DIST: ${cameraDistance.toFixed(2)}`;
+        }
+
+        function simulateKeyPress(code) {
+            const event = new KeyboardEvent('keydown', {
+                code: code,
+                key: code === 'Minus' ? '-' : (code === 'Equal' ? '+' : ''),
+                bubbles: true,
+                cancelable: true
+            });
+            document.dispatchEvent(event);
+        }
+
+        function simulateKeyP() {
+            const event = new KeyboardEvent('keydown', {
+                code: 'KeyP',
+                key: 'p',
+                bubbles: true,
+                cancelable: true
+            });
+            document.dispatchEvent(event);
+        }
+
+        function setupHoldButton(btn, code, pressedClass) {
+            let holdInterval = null;
+            let holdTimeout = null;
+
+            const startHold = () => {
+                simulateKeyPress(code);
+                btn.classList.add(pressedClass);
+
+                holdTimeout = setTimeout(() => {
+                    holdInterval = setInterval(() => {
+                        simulateKeyPress(code);
+                    }, 80);
+                }, 200);
+            };
+
+            const endHold = () => {
+                clearTimeout(holdTimeout);
+                clearInterval(holdInterval);
+                holdInterval = null;
+                holdTimeout = null;
+                btn.classList.remove(pressedClass);
+            };
+
+            btn.addEventListener('mousedown', (e) => { e.preventDefault(); startHold(); });
+            btn.addEventListener('mouseup', endHold);
+            btn.addEventListener('mouseleave', endHold);
+            btn.addEventListener('touchstart', (e) => { e.preventDefault(); startHold(); }, { passive: false });
+            btn.addEventListener('touchend', (e) => { e.preventDefault(); endHold(); }, { passive: false });
+            btn.addEventListener('touchcancel', endHold);
+        }
+
+        viewer.addSplatScene('./F3.ply', {
+            'showLoadingUI': true,
+            'position': [0, 0, 0],
+            'rotation': [0, 0, 0, 1],
+            'scale': [1, 1, 1]
+        })
+        .then(() => {
+            viewer.start();
+            console.log("F1.ply loaded successfully!");
+            
+            // 👇👇👇 请把下面这段小球代码粘贴到这里 👇👇👇
+            
+            const sphereGeometry = new THREE.SphereGeometry(0.5, 32, 32); 
+            const sphereMaterial = new THREE.MeshBasicMaterial({ 
+                color: 0xFF008C,     // 亮粉色 (跟你最后的发光文字呼应)
+                wireframe: true,     // 线框模式，看起来更有科技感
+                transparent: true,
+                opacity: 0.8
+            });
+            const sphere = new THREE.Mesh(sphereGeometry, sphereMaterial);
+            
+            // 设置小球的位置 (X, Y, Z) - 你可以根据需要修改这三个数字
+            sphere.position.set(0, 1, 0); 
+            
+              // 在你的 scene.add(sphere) 之后
+sphere.visible = false; // 默认不可见
+sphere.name = "magicSphere"; // 给它起个名字，方便射线检测找到它
+            // 将小球加入场景
+            if (viewer.scene) {
+                viewer.scene.add(sphere);
+
+              
+            } else {
+                // 兼容不同版本的高斯库
+                viewer.splatMesh.add(sphere); 
+            }
+
+            // 👆👆👆 小球代码结束 👆👆👆
+
+            mainCamera = viewer.camera;
+            if (mainCamera) {
+                targetPoint.set(0, 0, 0);
+                updateAnglesFromCamera();
+                document.getElementById('distanceSlider').value = cameraDistance;
+                document.getElementById('distanceValue').innerText = `DIST: ${cameraDistance.toFixed(2)}`;
+                startAutoRotateLoop();
+                updateAutoRotateUI();
+            } else {
+                const interval = setInterval(() => {
+                    if (viewer.camera) {
+                        mainCamera = viewer.camera;
+                        targetPoint.set(0, 0, 0);
+                        updateAnglesFromCamera();
+                        document.getElementById('distanceSlider').value = cameraDistance;
+                        document.getElementById('distanceValue').innerText = `DIST: ${cameraDistance.toFixed(2)}`;
+                        startAutoRotateLoop();
+                        updateAutoRotateUI();
+                        clearInterval(interval);
+                    }
+                }, 100);
+            }
+        })
+        .catch((error) => {
+            console.error("Load error - check file name:", error);
+            const panel = document.getElementById('controlPanel');
+            if (panel) panel.style.opacity = '0.5';
+        });
+        
+        const distanceSlider = document.getElementById('distanceSlider');
+        const speedSlider = document.getElementById('speedSlider');
+        const speedValue = document.getElementById('speedValue');
+        
+        distanceSlider.addEventListener('input', (e) => {
+            const val = parseFloat(e.target.value);
+            setCameraDistance(val);
+        });
+
+        speedSlider.addEventListener('input', (e) => {
+            autoRotateSpeed = parseFloat(e.target.value);
+            speedValue.innerText = `SPEED: ${autoRotateSpeed.toFixed(3)}`;
+        });
+        
+        const bloomMinus = document.getElementById('bloomMinusBtn');
+        const bloomPlus = document.getElementById('bloomPlusBtn');
+        setupHoldButton(bloomMinus, 'Minus', 'pressed-spread');
+        setupHoldButton(bloomPlus, 'Equal', 'pressed-tighten');
+
+        const viewToggleBtn = document.getElementById('viewToggleBtn');
+        let viewState = false;
+        
+        viewToggleBtn.addEventListener('click', () => {
+            viewState = !viewState;
+            simulateKeyP();
+            if (viewState) {
+                viewToggleBtn.classList.add('pressed-view');
+            } else {
+                viewToggleBtn.classList.remove('pressed-view');
+            }
+        });
+
+        const autoRotateBtn = document.getElementById('autoRotateBtn');
+        const autoLed = document.getElementById('autoLed');
+
+       function updateAutoRotateUI() {
+    const statusLed = document.getElementById('statusLed');
+    const rotateBtnText = document.getElementById('rotateBtnText');
+    const autoRotateBtn = document.getElementById('autoRotateBtn');
+
+    if (isAutoRotating) {
+        statusLed.classList.add('active');
+        rotateBtnText.innerText = '⟳ AUTO-ROTATE ON';
+        autoRotateBtn.classList.add('pressed-rotate'); // 保持高亮状态
+    } else {
+        statusLed.classList.remove('active');
+        rotateBtnText.innerText = '⟳ AUTO-ROTATE OFF';
+        autoRotateBtn.classList.remove('pressed-rotate'); // 移除高亮
+    }
+}
+
+        function toggleAutoRotate() {
+            isAutoRotating = !isAutoRotating;
+            if (isAutoRotating) {
+                startAutoRotateLoop();
+            } else {
+                if (animationId) {
+                    cancelAnimationFrame(animationId);
+                    animationId = null;
+                }
+            }
+            updateAutoRotateUI();
+        }
+        
+        function startAutoRotateLoop() {
+            if (animationId) cancelAnimationFrame(animationId);
+            function rotateStep() {
+                if (!isAutoRotating) return;
+                if (mainCamera) {
+                    currentAzimuth += autoRotateSpeed;
+                    updateCameraFromAngles();
+                }
+                animationId = requestAnimationFrame(rotateStep);
+            }
+            rotateStep();
+        }
+        
+        autoRotateBtn.addEventListener('click', toggleAutoRotate);
+
+        function syncAnglesFromCamera() {
+            if (!mainCamera || isAutoRotating) return;
+            const offset = new THREE.Vector3().subVectors(mainCamera.position, targetPoint);
+            const newDist = offset.length();
+            if (Math.abs(newDist - cameraDistance) > 0.01) {
+                cameraDistance = newDist;
+                distanceSlider.value = cameraDistance;
+                document.getElementById('distanceValue').innerText = `DIST: ${cameraDistance.toFixed(2)}`;
+            }
+            currentAzimuth = Math.atan2(offset.x, offset.z);
+            currentPolar = Math.acos(Math.min(1, Math.max(-1, offset.y / newDist)));
+        }
+        
+        function syncLoop() {
+            requestAnimationFrame(syncLoop);
+            if (mainCamera && !isAutoRotating) {
+                syncAnglesFromCamera();
+            }
+        }
+        syncLoop();
+        
+        window.addEventListener('resize', () => {
+            if (viewer && viewer.camera) {
+                viewer.camera.aspect = window.innerWidth / window.innerHeight;
+                viewer.camera.updateProjectionMatrix();
+            }
+        });
+
+        const panelToggleBtn = document.getElementById('panelToggleBtn');
+        const controlPanel = document.getElementById('controlPanel');
+        let panelVisible = false;
+
+        panelToggleBtn.addEventListener('click', () => {
+            panelVisible = !panelVisible;
+            if (panelVisible) {
+                controlPanel.classList.remove('collapsed');
+                panelToggleBtn.textContent = '▸ HIDE CONTROLS';
+            } else {
+                controlPanel.classList.add('collapsed');
+                panelToggleBtn.textContent = '▸ SHOW CONTROLS';
+            }
+        });
+
+        controlPanel.classList.add('collapsed');
+        
+// 1. 定义所有段落
+// 1. 定义所有段落
+const introTexts = [
+    "Summarise the main content of this passage in one sentence. What is the special significance of the Sumerians’ practice of drinking beer together, as mentioned in this passage? What other similar examples of primitive worship can be found in contemporary society?",
+    "Strictly speaking, Babylon did not have a wine god associated with wild, excessive drinking, as was the case with Dionysus in Greece. Their ‘wine god’ was a woman—Siduri—who was a ‘sommelier’ and also a goddess of winemaking.",
+    "In 《The Epic of Gilgamesh》, the hero Gilgamesh encounters her whilst on his quest for immortality. Seated upon a throne by the sea and wearing a golden veil, she is not merely a cup-bearer but also a wise guide; she attempts to persuade Gilgamesh to abandon his pursuit of the illusory immortality and instead enjoy drinking and merrymaking.",
+    "Whether to give up certain things in order to enjoy life."
+];
+const container = document.getElementById('introTextContainer');
+const finalContainer = document.getElementById('finalTextContainer');
+let currentTextIndex = 0;
+let charIndex = 0;
+
+function runStory() {
+    if (currentTextIndex < 3) {
+        // --- 处理前三段（打字机） ---
+        const currentText = introTexts[currentTextIndex];
+        if (charIndex < currentText.length) {
+            container.textContent += currentText.charAt(charIndex);
+            charIndex++;
+            setTimeout(runStory, 40);
+        } else {
+            setTimeout(() => {
+                container.classList.add('fade-out');
+                setTimeout(() => {
+                    container.textContent = "";
+                    container.classList.remove('fade-out');
+                    currentTextIndex++;
+                    charIndex = 0;
+                    runStory();
+                }, 2000);
+            }, 3000);
+        }
+    } else {
+        // --- 处理第四段（粉色发光渐显） ---
+        container.remove(); // 移除打字机容器
+        finalContainer.textContent = introTexts[3];
+        setTimeout(() => {
+            finalContainer.style.opacity = "1";
+        }, 500);
+        
+        // 6秒后消失
+        setTimeout(() => {
+            finalContainer.style.opacity = "0";
+            setTimeout(() => finalContainer.remove(), 3000);
+        }, 6000);
+    }
+} // 👈 【关键修复】：runStory 的大括号必须在这里闭合！
+
+// --- 射线点击监听一定要在 runStory 的外面！ ---
+const raycaster = new THREE.Raycaster();
+const mouse = new THREE.Vector2();
+
+window.addEventListener('click', (event) => {
+    // 忽略点击面板按钮本身的事件，防止冲突
+    if (event.target.tagName.toLowerCase() === 'button') return;
+
+    // 1. 将鼠标坐标转换为标准设备坐标 (-1 到 +1)
+    mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+    mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+    // 2. 更新射线 (确保 mainCamera 存在)
+    if (mainCamera) {
+        raycaster.setFromCamera(mouse, mainCamera);
+
+        // 获取场景中所有的物体进行相交测试（兼容不同版本高斯库）
+        let objectsToTest = [];
+        if (viewer.scene) objectsToTest = viewer.scene.children;
+        else if (viewer.splatMesh) objectsToTest = viewer.splatMesh.children;
+
+        // 3. 检查射线是否碰到小球
+        const intersects = raycaster.intersectObjects(objectsToTest, true);
+        
+        for (let i = 0; i < intersects.length; i++) {
+            if (intersects[i].object.name === "magicSphere") {
+                // 4. 如果点中了，显示 UI
+                document.getElementById('choiceOverlay').style.display = 'block';
+                break;
+            }
+        }
+    }
+});
+
+// 启动打字机故事
+window.addEventListener('load', runStory);
+
+// 👇 直接从全局环境调用 VR 初始化函数 👇
+if (window.initVRMode) {
+    window.initVRMode({ viewer: viewer, THREE: THREE });
+}
+
+console.log("✅ UI ready | Auto-rotate ON by default | Speed slider added | Collapsible panel | Pink/Purple/Blue palette");
+</script>
+
+
+
+
+<div id="choiceOverlay">
+    <p>Congratulations, our esteemed guest. You have been granted access to the temple’s entrance—a symbol of prestige and status for ordinary folk. Would you care to join us and drink until we’re dead drunk?</p>
+    <div class="modal-btn-group">
+        <button class="modal-btn" onclick="window.location.href='Life.html'">I’ve got my own things to do</button>
+        <button class="modal-btn primary" onclick="window.location.href='die.html'">Can’t wait</button>
+    </div>
+</div>
+
+
+</body>
+</html>
