@@ -6,6 +6,52 @@
   <title>A-Frame VR · 传送阵列 + 物品信息 + 音效</title>
   <script src="https://aframe.io/releases/1.0.4/aframe.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/aframe-event-set-component@5.0.0/dist/aframe-event-set-component.min.js"></script>
+  
+  <script>
+    // 自定义凝视信息组件 - 修复凝视交互
+    AFRAME.registerComponent('gaze-info', {
+      schema: {
+        title: { type: 'string', default: '神秘物品' },
+        desc: { type: 'string', default: '' }
+      },
+      init: function () {
+        let el = this.el;
+        let data = this.data;
+        let infoPanel = document.getElementById('info-panel');
+        let soundSystem = document.getElementById('sound-system');
+
+        // 鼠标/凝视进入
+        el.addEventListener('mouseenter', function () {
+          if (infoPanel) {
+            let descHtml = data.desc ? `<span class='sub'>${data.desc}</span>` : '';
+            infoPanel.innerHTML = `<b>${data.title}</b>${descHtml}`;
+            infoPanel.classList.add('visible');
+          }
+          // 播放信息提示音
+          if (soundSystem) {
+            let infoSound = soundSystem.querySelector('#info-sound');
+            if (infoSound) {
+              infoSound.components.sound.playSound();
+            }
+          }
+        });
+
+        // 鼠标/凝视离开
+        el.addEventListener('mouseleave', function () {
+          if (infoPanel) {
+            infoPanel.classList.remove('visible');
+            // 延迟清空内容，避免闪烁
+            setTimeout(() => {
+              if (!infoPanel.classList.contains('visible')) {
+                infoPanel.innerHTML = '';
+              }
+            }, 100);
+          }
+        });
+      }
+    });
+  </script>
+
   <style>
     body { margin: 0; overflow: hidden; }
     .info { position: absolute; bottom: 20px; left: 0; right: 0; text-align: center; color: rgba(255,255,255,0.8); font-family: sans-serif; font-size: 14px; pointer-events: none; text-shadow: 0 1px 4px rgba(0,0,0,0.5); z-index: 10; }
@@ -79,156 +125,127 @@
     <a-entity gltf-model="#crystal" position="6 -3.5 1" rotation="0 0 0" scale="1 1 1" shadow></a-entity>
     <a-entity gltf-model="#crystal" position="-6 -3.5 -1" rotation="0 0 0" scale="1.1 1.1 1.1" shadow></a-entity>
 
-    <!-- ★★★ 15件浮动物品 - 带点击/凝视信息 ★★★ -->
+    <!-- ★★★ 15件浮动物品 - 使用 gaze-info 组件 ★★★ -->
+    <!-- 所有物品添加 class="clickable" 和 gaze-info 组件 -->
     
     <!-- 1. 银蒸馏器 -->
     <a-entity gltf-model="#silverDistiller" position="-8 3 2" rotation="0 0 0" scale="0.05 0.05 0.05" shadow
-      animation="property: position; to: -8 4 2; dur: 2000; dir: alternate; loop: true; easing: easeInOutSine"
-      event-set__click="_target: #info-panel; _delay: 0; class: visible; innerHTML: <b>Silver Distiller</b><span class='sub'>An ornate alchemical apparatus used for purification rituals.</span>"
-      event-set__fuse="_target: #info-panel; _delay: 0; class: visible; innerHTML: <b>Silver Distiller</b><span class='sub'>An ornate alchemical apparatus used for purification rituals.</span>"
-      event-set__mouseleave="_target: #info-panel; _delay: 300; class: ; innerHTML: ">
+      class="clickable"
+      gaze-info="title: Silver Distiller; desc: An ornate alchemical apparatus used for purification rituals."
+      animation="property: position; to: -8 4 2; dur: 2000; dir: alternate; loop: true; easing: easeInOutSine">
       <a-sound src="#click-sound" event="click"></a-sound>
-      <a-sound src="#info-sound" event="click"></a-sound>
     </a-entity>
     
     <!-- 2. 血腥酒杯 -->
     <a-entity gltf-model="#bloodyGoblet" position="4 -1 -27" rotation="0 0 0" scale="2 2 2" shadow
-      animation="property: position; to: 4 0 -27; dur: 1800; dir: alternate; loop: true; easing: easeInOutSine"
-      event-set__click="_target: #info-panel; class: visible; innerHTML: <b>Bloody Goblet</b><span class='sub'>A crimson chalice rumored to hold the essence of ancient rites.</span>"
-      event-set__fuse="_target: #info-panel; class: visible; innerHTML: <b>Bloody Goblet</b><span class='sub'>A crimson chalice rumored to hold the essence of ancient rites.</span>"
-      event-set__mouseleave="_target: #info-panel; _delay: 300; class: ; innerHTML: ">
+      class="clickable"
+      gaze-info="title: Bloody Goblet; desc: A crimson chalice rumored to hold the essence of ancient rites."
+      animation="property: position; to: 4 0 -27; dur: 1800; dir: alternate; loop: true; easing: easeInOutSine">
       <a-sound src="#click-sound" event="click"></a-sound>
-      <a-sound src="#info-sound" event="click"></a-sound>
     </a-entity>
     
     <!-- 3. 埃及土块 -->
     <a-entity gltf-model="#egyptClay" position="-4 2.8 7" rotation="0 0 0" scale="0.5 0.5 0.5" shadow
-      animation="property: position; to: -4 3.8 7; dur: 2200; dir: alternate; loop: true; easing: easeInOutSine"
-      event-set__click="_target: #info-panel; class: visible; innerHTML: <b>Egyptian Clay</b><span class='sub'>Mystical earth from the Nile, imbued with protective energies.</span>"
-      event-set__fuse="_target: #info-panel; class: visible; innerHTML: <b>Egyptian Clay</b><span class='sub'>Mystical earth from the Nile, imbued with protective energies.</span>"
-      event-set__mouseleave="_target: #info-panel; _delay: 300; class: ; innerHTML: ">
+      class="clickable"
+      gaze-info="title: Egyptian Clay; desc: Mystical earth from the Nile, imbued with protective energies."
+      animation="property: position; to: -4 3.8 7; dur: 2200; dir: alternate; loop: true; easing: easeInOutSine">
       <a-sound src="#click-sound" event="click"></a-sound>
-      <a-sound src="#info-sound" event="click"></a-sound>
     </a-entity>
     
     <!-- 4. 匣子 -->
     <a-entity gltf-model="#box" position="5 3.2 6" rotation="0 0 0" scale="14 14 14" shadow
-      animation="property: position; to: 5 4.2 6; dur: 1900; dir: alternate; loop: true; easing: easeInOutSine"
-      event-set__click="_target: #info-panel; class: visible; innerHTML: <b>Mysterious Box</b><span class='sub'>A sealed container holding secrets from a forgotten era.</span>"
-      event-set__fuse="_target: #info-panel; class: visible; innerHTML: <b>Mysterious Box</b><span class='sub'>A sealed container holding secrets from a forgotten era.</span>"
-      event-set__mouseleave="_target: #info-panel; _delay: 300; class: ; innerHTML: ">
+      class="clickable"
+      gaze-info="title: Mysterious Box; desc: A sealed container holding secrets from a forgotten era."
+      animation="property: position; to: 5 4.2 6; dur: 1900; dir: alternate; loop: true; easing: easeInOutSine">
       <a-sound src="#click-sound" event="click"></a-sound>
-      <a-sound src="#info-sound" event="click"></a-sound>
     </a-entity>
     
     <!-- 5. 镜子 -->
     <a-entity gltf-model="#mirror" position="-4 2.6 -15" rotation="0 0 0" scale="4 4 4" shadow
-      animation="property: position; to: -4 3.6 -15; dur: 2100; dir: alternate; loop: true; easing: easeInOutSine"
-      event-set__click="_target: #info-panel; class: visible; innerHTML: <b>Ancient Mirror</b><span class='sub'>Reflects not your face, but the truth of your soul.</span>"
-      event-set__fuse="_target: #info-panel; class: visible; innerHTML: <b>Ancient Mirror</b><span class='sub'>Reflects not your face, but the truth of your soul.</span>"
-      event-set__mouseleave="_target: #info-panel; _delay: 300; class: ; innerHTML: ">
+      class="clickable"
+      gaze-info="title: Ancient Mirror; desc: Reflects not your face, but the truth of your soul."
+      animation="property: position; to: -4 3.6 -15; dur: 2100; dir: alternate; loop: true; easing: easeInOutSine">
       <a-sound src="#click-sound" event="click"></a-sound>
-      <a-sound src="#info-sound" event="click"></a-sound>
     </a-entity>
     
     <!-- 6. 破烂书 -->
     <a-entity gltf-model="#tornBook" position="6 2.9 -60" rotation="0 0 0" scale="0.1 0.1 0.1" shadow
-      animation="property: position; to: 6 3.9 -60; dur: 1700; dir: alternate; loop: true; easing: easeInOutSine"
-      event-set__click="_target: #info-panel; class: visible; innerHTML: <b>Torn Grimoire</b><span class='sub'>Fragments of forbidden knowledge etched in ancient script.</span>"
-      event-set__fuse="_target: #info-panel; class: visible; innerHTML: <b>Torn Grimoire</b><span class='sub'>Fragments of forbidden knowledge etched in ancient script.</span>"
-      event-set__mouseleave="_target: #info-panel; _delay: 300; class: ; innerHTML: ">
+      class="clickable"
+      gaze-info="title: Torn Grimoire; desc: Fragments of forbidden knowledge etched in ancient script."
+      animation="property: position; to: 6 3.9 -60; dur: 1700; dir: alternate; loop: true; easing: easeInOutSine">
       <a-sound src="#click-sound" event="click"></a-sound>
-      <a-sound src="#info-sound" event="click"></a-sound>
     </a-entity>
     
     <!-- 7. 异形圣杯 -->
     <a-entity gltf-model="#alienChalice" position="9 3.4 17" rotation="0 0 0" scale="0.01 0.01 0.01" shadow
-      animation="property: position; to: 9 4.4 17; dur: 2300; dir: alternate; loop: true; easing: easeInOutSine"
-      event-set__click="_target: #info-panel; class: visible; innerHTML: <b>Alien Chalice</b><span class='sub'>An otherworldly cup that hums with cosmic resonance.</span>"
-      event-set__fuse="_target: #info-panel; class: visible; innerHTML: <b>Alien Chalice</b><span class='sub'>An otherworldly cup that hums with cosmic resonance.</span>"
-      event-set__mouseleave="_target: #info-panel; _delay: 300; class: ; innerHTML: ">
+      class="clickable"
+      gaze-info="title: Alien Chalice; desc: An otherworldly cup that hums with cosmic resonance."
+      animation="property: position; to: 9 4.4 17; dur: 2300; dir: alternate; loop: true; easing: easeInOutSine">
       <a-sound src="#click-sound" event="click"></a-sound>
-      <a-sound src="#info-sound" event="click"></a-sound>
     </a-entity>
     
     <!-- 8. 铜胸针 -->
     <a-entity gltf-model="#copperBrooch" position="9 2.7 2" rotation="0 0 0" scale="0.1 0.1 0.1" shadow
-      animation="property: position; to: 9 3.7 2; dur: 2000; dir: alternate; loop: true; easing: easeInOutSine"
-      event-set__click="_target: #info-panel; class: visible; innerHTML: <b>Copper Brooch</b><span class='sub'>A symbol of loyalty, worn by ancient guardians of the realm.</span>"
-      event-set__fuse="_target: #info-panel; class: visible; innerHTML: <b>Copper Brooch</b><span class='sub'>A symbol of loyalty, worn by ancient guardians of the realm.</span>"
-      event-set__mouseleave="_target: #info-panel; _delay: 300; class: ; innerHTML: ">
+      class="clickable"
+      gaze-info="title: Copper Brooch; desc: A symbol of loyalty, worn by ancient guardians of the realm."
+      animation="property: position; to: 9 3.7 2; dur: 2000; dir: alternate; loop: true; easing: easeInOutSine">
       <a-sound src="#click-sound" event="click"></a-sound>
-      <a-sound src="#info-sound" event="click"></a-sound>
     </a-entity>
     
     <!-- 9. 葡萄耳环 -->
     <a-entity gltf-model="#grapeEarring" position="-3 3.1 8" rotation="0 0 0" scale="0.1 0.1 0.1" shadow
-      animation="property: position; to: -3 4.1 8; dur: 1850; dir: alternate; loop: true; easing: easeInOutSine"
-      event-set__click="_target: #info-panel; class: visible; innerHTML: <b>Grape Earring</b><span class='sub'>A delicate adornment symbolizing abundance and vitality.</span>"
-      event-set__fuse="_target: #info-panel; class: visible; innerHTML: <b>Grape Earring</b><span class='sub'>A delicate adornment symbolizing abundance and vitality.</span>"
-      event-set__mouseleave="_target: #info-panel; _delay: 300; class: ; innerHTML: ">
+      class="clickable"
+      gaze-info="title: Grape Earring; desc: A delicate adornment symbolizing abundance and vitality."
+      animation="property: position; to: -3 4.1 8; dur: 1850; dir: alternate; loop: true; easing: easeInOutSine">
       <a-sound src="#click-sound" event="click"></a-sound>
-      <a-sound src="#info-sound" event="click"></a-sound>
     </a-entity>
     
     <!-- 10. 香炉 -->
     <a-entity gltf-model="#censer" position="3 2.4 8" rotation="0 0 0" scale="1 1 1" shadow
-      animation="property: position; to: 3 3.4 8; dur: 2150; dir: alternate; loop: true; easing: easeInOutSine"
-      event-set__click="_target: #info-panel; class: visible; innerHTML: <b>Bronze Censer</b><span class='sub'>Burns sacred incense to ward off malevolent spirits.</span>"
-      event-set__fuse="_target: #info-panel; class: visible; innerHTML: <b>Bronze Censer</b><span class='sub'>Burns sacred incense to ward off malevolent spirits.</span>"
-      event-set__mouseleave="_target: #info-panel; _delay: 300; class: ; innerHTML: ">
+      class="clickable"
+      gaze-info="title: Bronze Censer; desc: Burns sacred incense to ward off malevolent spirits."
+      animation="property: position; to: 3 3.4 8; dur: 2150; dir: alternate; loop: true; easing: easeInOutSine">
       <a-sound src="#click-sound" event="click"></a-sound>
-      <a-sound src="#info-sound" event="click"></a-sound>
     </a-entity>
     
     <!-- 11. 铜碗 -->
     <a-entity gltf-model="#copperBowl" position="-7 3.6 47" rotation="0 0 0" scale="1 1 1" shadow
-      animation="property: position; to: -7 4.6 47; dur: 1950; dir: alternate; loop: true; easing: easeInOutSine"
-      event-set__click="_target: #info-panel; class: visible; innerHTML: <b>Copper Bowl</b><span class='sub'>A ceremonial vessel used in moonlit purification rites.</span>"
-      event-set__fuse="_target: #info-panel; class: visible; innerHTML: <b>Copper Bowl</b><span class='sub'>A ceremonial vessel used in moonlit purification rites.</span>"
-      event-set__mouseleave="_target: #info-panel; _delay: 300; class: ; innerHTML: ">
+      class="clickable"
+      gaze-info="title: Copper Bowl; desc: A ceremonial vessel used in moonlit purification rites."
+      animation="property: position; to: -7 4.6 47; dur: 1950; dir: alternate; loop: true; easing: easeInOutSine">
       <a-sound src="#click-sound" event="click"></a-sound>
-      <a-sound src="#info-sound" event="click"></a-sound>
     </a-entity>
     
     <!-- 12. 绿松石狮子 -->
     <a-entity gltf-model="#turquoiseLion" position="8 2.8 -2" rotation="0 0 0" scale="17 17 17" shadow
-      animation="property: position; to: 8 3.8 -2; dur: 2050; dir: alternate; loop: true; easing: easeInOutSine"
-      event-set__click="_target: #info-panel; class: visible; innerHTML: <b>Turquoise Lion</b><span class='sub'>A majestic guardian carved from sacred blue stone.</span>"
-      event-set__fuse="_target: #info-panel; class: visible; innerHTML: <b>Turquoise Lion</b><span class='sub'>A majestic guardian carved from sacred blue stone.</span>"
-      event-set__mouseleave="_target: #info-panel; _delay: 300; class: ; innerHTML: ">
+      class="clickable"
+      gaze-info="title: Turquoise Lion; desc: A majestic guardian carved from sacred blue stone."
+      animation="property: position; to: 8 3.8 -2; dur: 2050; dir: alternate; loop: true; easing: easeInOutSine">
       <a-sound src="#click-sound" event="click"></a-sound>
-      <a-sound src="#info-sound" event="click"></a-sound>
     </a-entity>
     
     <!-- 13. 独耳金羊驼 -->
     <a-entity gltf-model="#oneEaredAlpaca" position="-5 3.3 -7" rotation="0 0 0" scale="0.5 0.5 0.5" shadow
-      animation="property: position; to: -5 4.3 -7; dur: 2250; dir: alternate; loop: true; easing: easeInOutSine"
-      event-set__click="_target: #info-panel; class: visible; innerHTML: <b>One-Eared Golden Alpaca</b><span class='sub'>A rare and whimsical creature of Andean legend.</span>"
-      event-set__fuse="_target: #info-panel; class: visible; innerHTML: <b>One-Eared Golden Alpaca</b><span class='sub'>A rare and whimsical creature of Andean legend.</span>"
-      event-set__mouseleave="_target: #info-panel; _delay: 300; class: ; innerHTML: ">
+      class="clickable"
+      gaze-info="title: One-Eared Golden Alpaca; desc: A rare and whimsical creature of Andean legend."
+      animation="property: position; to: -5 4.3 -7; dur: 2250; dir: alternate; loop: true; easing: easeInOutSine">
       <a-sound src="#click-sound" event="click"></a-sound>
-      <a-sound src="#info-sound" event="click"></a-sound>
     </a-entity>
     
     <!-- 14. 金烛台 -->
     <a-entity gltf-model="#goldCandlestick" position="4 2.5 -8" rotation="0 0 0" scale="11 11 11" shadow
-      animation="property: position; to: 4 3.5 -8; dur: 1750; dir: alternate; loop: true; easing: easeInOutSine"
-      event-set__click="_target: #info-panel; class: visible; innerHTML: <b>Gold Candlestick</b><span class='sub'>A beacon of light that guides souls through the darkness.</span>"
-      event-set__fuse="_target: #info-panel; class: visible; innerHTML: <b>Gold Candlestick</b><span class='sub'>A beacon of light that guides souls through the darkness.</span>"
-      event-set__mouseleave="_target: #info-panel; _delay: 300; class: ; innerHTML: ">
+      class="clickable"
+      gaze-info="title: Gold Candlestick; desc: A beacon of light that guides souls through the darkness."
+      animation="property: position; to: 4 3.5 -8; dur: 1750; dir: alternate; loop: true; easing: easeInOutSine">
       <a-sound src="#click-sound" event="click"></a-sound>
-      <a-sound src="#info-sound" event="click"></a-sound>
     </a-entity>
     
     <!-- 15. 异形盖杯 -->
     <a-entity gltf-model="#alienLiddedCup" position="-2 3.7 11" rotation="0 0 0" scale="0.1 0.1 0.1" shadow
-      animation="property: position; to: -2 4.7 11; dur: 2400; dir: alternate; loop: true; easing: easeInOutSine"
-      event-set__click="_target: #info-panel; class: visible; innerHTML: <b>Alien Lidded Cup</b><span class='sub'>A cryptic vessel that whispers secrets of the void.</span>"
-      event-set__fuse="_target: #info-panel; class: visible; innerHTML: <b>Alien Lidded Cup</b><span class='sub'>A cryptic vessel that whispers secrets of the void.</span>"
-      event-set__mouseleave="_target: #info-panel; _delay: 300; class: ; innerHTML: ">
+      class="clickable"
+      gaze-info="title: Alien Lidded Cup; desc: A cryptic vessel that whispers secrets of the void."
+      animation="property: position; to: -2 4.7 11; dur: 2400; dir: alternate; loop: true; easing: easeInOutSine">
       <a-sound src="#click-sound" event="click"></a-sound>
-      <a-sound src="#info-sound" event="click"></a-sound>
     </a-entity>
 
     <!-- ★★★ 拆封模型 ★★★ -->
@@ -286,99 +303,97 @@
     <a-entity gltf-model="#figTree" position="70 -4 90" rotation="0 0 0" scale="170 170 170" material="metalness: 0.6; roughness: 0.5; color: #fdcb6e" shadow></a-entity>
 
     <!-- ★★★ 传送点 - 网格阵列 ★★★ -->
-    <!-- 范围：X从-80到80，Z从-80到80，步长20，形成完整网格 -->
     <a-entity position="0 0.05 0">
-      <!-- 生成网格传送点 -->
-      <a-cylinder position="0 0.05 0" radius="1.5" height="0.05" material="color: #ff69b4; opacity: 0.5; transparent: true; emissive: #ff1493" smooth-teleport="target: 0 1.6 0" event-set__click="_target: #sound-system; _delay: 0; components: sound.play"></a-cylinder>
-      <a-cylinder position="20 0.05 0" radius="1.5" height="0.05" material="color: #ff69b4; opacity: 0.5; transparent: true; emissive: #ff1493" smooth-teleport="target: 20 1.6 0" event-set__click="_target: #sound-system; _delay: 0; components: sound.play"></a-cylinder>
-      <a-cylinder position="40 0.05 0" radius="1.5" height="0.05" material="color: #ff69b4; opacity: 0.5; transparent: true; emissive: #ff1493" smooth-teleport="target: 40 1.6 0" event-set__click="_target: #sound-system; _delay: 0; components: sound.play"></a-cylinder>
-      <a-cylinder position="60 0.05 0" radius="1.5" height="0.05" material="color: #ff69b4; opacity: 0.5; transparent: true; emissive: #ff1493" smooth-teleport="target: 60 1.6 0" event-set__click="_target: #sound-system; _delay: 0; components: sound.play"></a-cylinder>
-      <a-cylinder position="80 0.05 0" radius="1.5" height="0.05" material="color: #ff69b4; opacity: 0.5; transparent: true; emissive: #ff1493" smooth-teleport="target: 80 1.6 0" event-set__click="_target: #sound-system; _delay: 0; components: sound.play"></a-cylinder>
-      <a-cylinder position="-20 0.05 0" radius="1.5" height="0.05" material="color: #ff69b4; opacity: 0.5; transparent: true; emissive: #ff1493" smooth-teleport="target: -20 1.6 0" event-set__click="_target: #sound-system; _delay: 0; components: sound.play"></a-cylinder>
-      <a-cylinder position="-40 0.05 0" radius="1.5" height="0.05" material="color: #ff69b4; opacity: 0.5; transparent: true; emissive: #ff1493" smooth-teleport="target: -40 1.6 0" event-set__click="_target: #sound-system; _delay: 0; components: sound.play"></a-cylinder>
-      <a-cylinder position="-60 0.05 0" radius="1.5" height="0.05" material="color: #ff69b4; opacity: 0.5; transparent: true; emissive: #ff1493" smooth-teleport="target: -60 1.6 0" event-set__click="_target: #sound-system; _delay: 0; components: sound.play"></a-cylinder>
-      <a-cylinder position="-80 0.05 0" radius="1.5" height="0.05" material="color: #ff69b4; opacity: 0.5; transparent: true; emissive: #ff1493" smooth-teleport="target: -80 1.6 0" event-set__click="_target: #sound-system; _delay: 0; components: sound.play"></a-cylinder>
+      <a-cylinder position="0 0.05 0" radius="1.5" height="0.05" material="color: #ff69b4; opacity: 0.5; transparent: true; emissive: #ff1493" smooth-teleport="target: 0 1.6 0" class="clickable" event-set__click="_target: #sound-system; _delay: 0; components: sound.play"></a-cylinder>
+      <a-cylinder position="20 0.05 0" radius="1.5" height="0.05" material="color: #ff69b4; opacity: 0.5; transparent: true; emissive: #ff1493" smooth-teleport="target: 20 1.6 0" class="clickable" event-set__click="_target: #sound-system; _delay: 0; components: sound.play"></a-cylinder>
+      <a-cylinder position="40 0.05 0" radius="1.5" height="0.05" material="color: #ff69b4; opacity: 0.5; transparent: true; emissive: #ff1493" smooth-teleport="target: 40 1.6 0" class="clickable" event-set__click="_target: #sound-system; _delay: 0; components: sound.play"></a-cylinder>
+      <a-cylinder position="60 0.05 0" radius="1.5" height="0.05" material="color: #ff69b4; opacity: 0.5; transparent: true; emissive: #ff1493" smooth-teleport="target: 60 1.6 0" class="clickable" event-set__click="_target: #sound-system; _delay: 0; components: sound.play"></a-cylinder>
+      <a-cylinder position="80 0.05 0" radius="1.5" height="0.05" material="color: #ff69b4; opacity: 0.5; transparent: true; emissive: #ff1493" smooth-teleport="target: 80 1.6 0" class="clickable" event-set__click="_target: #sound-system; _delay: 0; components: sound.play"></a-cylinder>
+      <a-cylinder position="-20 0.05 0" radius="1.5" height="0.05" material="color: #ff69b4; opacity: 0.5; transparent: true; emissive: #ff1493" smooth-teleport="target: -20 1.6 0" class="clickable" event-set__click="_target: #sound-system; _delay: 0; components: sound.play"></a-cylinder>
+      <a-cylinder position="-40 0.05 0" radius="1.5" height="0.05" material="color: #ff69b4; opacity: 0.5; transparent: true; emissive: #ff1493" smooth-teleport="target: -40 1.6 0" class="clickable" event-set__click="_target: #sound-system; _delay: 0; components: sound.play"></a-cylinder>
+      <a-cylinder position="-60 0.05 0" radius="1.5" height="0.05" material="color: #ff69b4; opacity: 0.5; transparent: true; emissive: #ff1493" smooth-teleport="target: -60 1.6 0" class="clickable" event-set__click="_target: #sound-system; _delay: 0; components: sound.play"></a-cylinder>
+      <a-cylinder position="-80 0.05 0" radius="1.5" height="0.05" material="color: #ff69b4; opacity: 0.5; transparent: true; emissive: #ff1493" smooth-teleport="target: -80 1.6 0" class="clickable" event-set__click="_target: #sound-system; _delay: 0; components: sound.play"></a-cylinder>
       
-      <a-cylinder position="0 0.05 20" radius="1.5" height="0.05" material="color: #ff69b4; opacity: 0.5; transparent: true; emissive: #ff1493" smooth-teleport="target: 0 1.6 20" event-set__click="_target: #sound-system; _delay: 0; components: sound.play"></a-cylinder>
-      <a-cylinder position="20 0.05 20" radius="1.5" height="0.05" material="color: #ff69b4; opacity: 0.5; transparent: true; emissive: #ff1493" smooth-teleport="target: 20 1.6 20" event-set__click="_target: #sound-system; _delay: 0; components: sound.play"></a-cylinder>
-      <a-cylinder position="40 0.05 20" radius="1.5" height="0.05" material="color: #ff69b4; opacity: 0.5; transparent: true; emissive: #ff1493" smooth-teleport="target: 40 1.6 20" event-set__click="_target: #sound-system; _delay: 0; components: sound.play"></a-cylinder>
-      <a-cylinder position="60 0.05 20" radius="1.5" height="0.05" material="color: #ff69b4; opacity: 0.5; transparent: true; emissive: #ff1493" smooth-teleport="target: 60 1.6 20" event-set__click="_target: #sound-system; _delay: 0; components: sound.play"></a-cylinder>
-      <a-cylinder position="80 0.05 20" radius="1.5" height="0.05" material="color: #ff69b4; opacity: 0.5; transparent: true; emissive: #ff1493" smooth-teleport="target: 80 1.6 20" event-set__click="_target: #sound-system; _delay: 0; components: sound.play"></a-cylinder>
-      <a-cylinder position="-20 0.05 20" radius="1.5" height="0.05" material="color: #ff69b4; opacity: 0.5; transparent: true; emissive: #ff1493" smooth-teleport="target: -20 1.6 20" event-set__click="_target: #sound-system; _delay: 0; components: sound.play"></a-cylinder>
-      <a-cylinder position="-40 0.05 20" radius="1.5" height="0.05" material="color: #ff69b4; opacity: 0.5; transparent: true; emissive: #ff1493" smooth-teleport="target: -40 1.6 20" event-set__click="_target: #sound-system; _delay: 0; components: sound.play"></a-cylinder>
-      <a-cylinder position="-60 0.05 20" radius="1.5" height="0.05" material="color: #ff69b4; opacity: 0.5; transparent: true; emissive: #ff1493" smooth-teleport="target: -60 1.6 20" event-set__click="_target: #sound-system; _delay: 0; components: sound.play"></a-cylinder>
-      <a-cylinder position="-80 0.05 20" radius="1.5" height="0.05" material="color: #ff69b4; opacity: 0.5; transparent: true; emissive: #ff1493" smooth-teleport="target: -80 1.6 20" event-set__click="_target: #sound-system; _delay: 0; components: sound.play"></a-cylinder>
+      <a-cylinder position="0 0.05 20" radius="1.5" height="0.05" material="color: #ff69b4; opacity: 0.5; transparent: true; emissive: #ff1493" smooth-teleport="target: 0 1.6 20" class="clickable" event-set__click="_target: #sound-system; _delay: 0; components: sound.play"></a-cylinder>
+      <a-cylinder position="20 0.05 20" radius="1.5" height="0.05" material="color: #ff69b4; opacity: 0.5; transparent: true; emissive: #ff1493" smooth-teleport="target: 20 1.6 20" class="clickable" event-set__click="_target: #sound-system; _delay: 0; components: sound.play"></a-cylinder>
+      <a-cylinder position="40 0.05 20" radius="1.5" height="0.05" material="color: #ff69b4; opacity: 0.5; transparent: true; emissive: #ff1493" smooth-teleport="target: 40 1.6 20" class="clickable" event-set__click="_target: #sound-system; _delay: 0; components: sound.play"></a-cylinder>
+      <a-cylinder position="60 0.05 20" radius="1.5" height="0.05" material="color: #ff69b4; opacity: 0.5; transparent: true; emissive: #ff1493" smooth-teleport="target: 60 1.6 20" class="clickable" event-set__click="_target: #sound-system; _delay: 0; components: sound.play"></a-cylinder>
+      <a-cylinder position="80 0.05 20" radius="1.5" height="0.05" material="color: #ff69b4; opacity: 0.5; transparent: true; emissive: #ff1493" smooth-teleport="target: 80 1.6 20" class="clickable" event-set__click="_target: #sound-system; _delay: 0; components: sound.play"></a-cylinder>
+      <a-cylinder position="-20 0.05 20" radius="1.5" height="0.05" material="color: #ff69b4; opacity: 0.5; transparent: true; emissive: #ff1493" smooth-teleport="target: -20 1.6 20" class="clickable" event-set__click="_target: #sound-system; _delay: 0; components: sound.play"></a-cylinder>
+      <a-cylinder position="-40 0.05 20" radius="1.5" height="0.05" material="color: #ff69b4; opacity: 0.5; transparent: true; emissive: #ff1493" smooth-teleport="target: -40 1.6 20" class="clickable" event-set__click="_target: #sound-system; _delay: 0; components: sound.play"></a-cylinder>
+      <a-cylinder position="-60 0.05 20" radius="1.5" height="0.05" material="color: #ff69b4; opacity: 0.5; transparent: true; emissive: #ff1493" smooth-teleport="target: -60 1.6 20" class="clickable" event-set__click="_target: #sound-system; _delay: 0; components: sound.play"></a-cylinder>
+      <a-cylinder position="-80 0.05 20" radius="1.5" height="0.05" material="color: #ff69b4; opacity: 0.5; transparent: true; emissive: #ff1493" smooth-teleport="target: -80 1.6 20" class="clickable" event-set__click="_target: #sound-system; _delay: 0; components: sound.play"></a-cylinder>
       
-      <a-cylinder position="0 0.05 40" radius="1.5" height="0.05" material="color: #ff69b4; opacity: 0.5; transparent: true; emissive: #ff1493" smooth-teleport="target: 0 1.6 40" event-set__click="_target: #sound-system; _delay: 0; components: sound.play"></a-cylinder>
-      <a-cylinder position="20 0.05 40" radius="1.5" height="0.05" material="color: #ff69b4; opacity: 0.5; transparent: true; emissive: #ff1493" smooth-teleport="target: 20 1.6 40" event-set__click="_target: #sound-system; _delay: 0; components: sound.play"></a-cylinder>
-      <a-cylinder position="40 0.05 40" radius="1.5" height="0.05" material="color: #ff69b4; opacity: 0.5; transparent: true; emissive: #ff1493" smooth-teleport="target: 40 1.6 40" event-set__click="_target: #sound-system; _delay: 0; components: sound.play"></a-cylinder>
-      <a-cylinder position="60 0.05 40" radius="1.5" height="0.05" material="color: #ff69b4; opacity: 0.5; transparent: true; emissive: #ff1493" smooth-teleport="target: 60 1.6 40" event-set__click="_target: #sound-system; _delay: 0; components: sound.play"></a-cylinder>
-      <a-cylinder position="80 0.05 40" radius="1.5" height="0.05" material="color: #ff69b4; opacity: 0.5; transparent: true; emissive: #ff1493" smooth-teleport="target: 80 1.6 40" event-set__click="_target: #sound-system; _delay: 0; components: sound.play"></a-cylinder>
-      <a-cylinder position="-20 0.05 40" radius="1.5" height="0.05" material="color: #ff69b4; opacity: 0.5; transparent: true; emissive: #ff1493" smooth-teleport="target: -20 1.6 40" event-set__click="_target: #sound-system; _delay: 0; components: sound.play"></a-cylinder>
-      <a-cylinder position="-40 0.05 40" radius="1.5" height="0.05" material="color: #ff69b4; opacity: 0.5; transparent: true; emissive: #ff1493" smooth-teleport="target: -40 1.6 40" event-set__click="_target: #sound-system; _delay: 0; components: sound.play"></a-cylinder>
-      <a-cylinder position="-60 0.05 40" radius="1.5" height="0.05" material="color: #ff69b4; opacity: 0.5; transparent: true; emissive: #ff1493" smooth-teleport="target: -60 1.6 40" event-set__click="_target: #sound-system; _delay: 0; components: sound.play"></a-cylinder>
-      <a-cylinder position="-80 0.05 40" radius="1.5" height="0.05" material="color: #ff69b4; opacity: 0.5; transparent: true; emissive: #ff1493" smooth-teleport="target: -80 1.6 40" event-set__click="_target: #sound-system; _delay: 0; components: sound.play"></a-cylinder>
+      <a-cylinder position="0 0.05 40" radius="1.5" height="0.05" material="color: #ff69b4; opacity: 0.5; transparent: true; emissive: #ff1493" smooth-teleport="target: 0 1.6 40" class="clickable" event-set__click="_target: #sound-system; _delay: 0; components: sound.play"></a-cylinder>
+      <a-cylinder position="20 0.05 40" radius="1.5" height="0.05" material="color: #ff69b4; opacity: 0.5; transparent: true; emissive: #ff1493" smooth-teleport="target: 20 1.6 40" class="clickable" event-set__click="_target: #sound-system; _delay: 0; components: sound.play"></a-cylinder>
+      <a-cylinder position="40 0.05 40" radius="1.5" height="0.05" material="color: #ff69b4; opacity: 0.5; transparent: true; emissive: #ff1493" smooth-teleport="target: 40 1.6 40" class="clickable" event-set__click="_target: #sound-system; _delay: 0; components: sound.play"></a-cylinder>
+      <a-cylinder position="60 0.05 40" radius="1.5" height="0.05" material="color: #ff69b4; opacity: 0.5; transparent: true; emissive: #ff1493" smooth-teleport="target: 60 1.6 40" class="clickable" event-set__click="_target: #sound-system; _delay: 0; components: sound.play"></a-cylinder>
+      <a-cylinder position="80 0.05 40" radius="1.5" height="0.05" material="color: #ff69b4; opacity: 0.5; transparent: true; emissive: #ff1493" smooth-teleport="target: 80 1.6 40" class="clickable" event-set__click="_target: #sound-system; _delay: 0; components: sound.play"></a-cylinder>
+      <a-cylinder position="-20 0.05 40" radius="1.5" height="0.05" material="color: #ff69b4; opacity: 0.5; transparent: true; emissive: #ff1493" smooth-teleport="target: -20 1.6 40" class="clickable" event-set__click="_target: #sound-system; _delay: 0; components: sound.play"></a-cylinder>
+      <a-cylinder position="-40 0.05 40" radius="1.5" height="0.05" material="color: #ff69b4; opacity: 0.5; transparent: true; emissive: #ff1493" smooth-teleport="target: -40 1.6 40" class="clickable" event-set__click="_target: #sound-system; _delay: 0; components: sound.play"></a-cylinder>
+      <a-cylinder position="-60 0.05 40" radius="1.5" height="0.05" material="color: #ff69b4; opacity: 0.5; transparent: true; emissive: #ff1493" smooth-teleport="target: -60 1.6 40" class="clickable" event-set__click="_target: #sound-system; _delay: 0; components: sound.play"></a-cylinder>
+      <a-cylinder position="-80 0.05 40" radius="1.5" height="0.05" material="color: #ff69b4; opacity: 0.5; transparent: true; emissive: #ff1493" smooth-teleport="target: -80 1.6 40" class="clickable" event-set__click="_target: #sound-system; _delay: 0; components: sound.play"></a-cylinder>
       
-      <a-cylinder position="0 0.05 60" radius="1.5" height="0.05" material="color: #ff69b4; opacity: 0.5; transparent: true; emissive: #ff1493" smooth-teleport="target: 0 1.6 60" event-set__click="_target: #sound-system; _delay: 0; components: sound.play"></a-cylinder>
-      <a-cylinder position="20 0.05 60" radius="1.5" height="0.05" material="color: #ff69b4; opacity: 0.5; transparent: true; emissive: #ff1493" smooth-teleport="target: 20 1.6 60" event-set__click="_target: #sound-system; _delay: 0; components: sound.play"></a-cylinder>
-      <a-cylinder position="40 0.05 60" radius="1.5" height="0.05" material="color: #ff69b4; opacity: 0.5; transparent: true; emissive: #ff1493" smooth-teleport="target: 40 1.6 60" event-set__click="_target: #sound-system; _delay: 0; components: sound.play"></a-cylinder>
-      <a-cylinder position="60 0.05 60" radius="1.5" height="0.05" material="color: #ff69b4; opacity: 0.5; transparent: true; emissive: #ff1493" smooth-teleport="target: 60 1.6 60" event-set__click="_target: #sound-system; _delay: 0; components: sound.play"></a-cylinder>
-      <a-cylinder position="80 0.05 60" radius="1.5" height="0.05" material="color: #ff69b4; opacity: 0.5; transparent: true; emissive: #ff1493" smooth-teleport="target: 80 1.6 60" event-set__click="_target: #sound-system; _delay: 0; components: sound.play"></a-cylinder>
-      <a-cylinder position="-20 0.05 60" radius="1.5" height="0.05" material="color: #ff69b4; opacity: 0.5; transparent: true; emissive: #ff1493" smooth-teleport="target: -20 1.6 60" event-set__click="_target: #sound-system; _delay: 0; components: sound.play"></a-cylinder>
-      <a-cylinder position="-40 0.05 60" radius="1.5" height="0.05" material="color: #ff69b4; opacity: 0.5; transparent: true; emissive: #ff1493" smooth-teleport="target: -40 1.6 60" event-set__click="_target: #sound-system; _delay: 0; components: sound.play"></a-cylinder>
-      <a-cylinder position="-60 0.05 60" radius="1.5" height="0.05" material="color: #ff69b4; opacity: 0.5; transparent: true; emissive: #ff1493" smooth-teleport="target: -60 1.6 60" event-set__click="_target: #sound-system; _delay: 0; components: sound.play"></a-cylinder>
-      <a-cylinder position="-80 0.05 60" radius="1.5" height="0.05" material="color: #ff69b4; opacity: 0.5; transparent: true; emissive: #ff1493" smooth-teleport="target: -80 1.6 60" event-set__click="_target: #sound-system; _delay: 0; components: sound.play"></a-cylinder>
+      <a-cylinder position="0 0.05 60" radius="1.5" height="0.05" material="color: #ff69b4; opacity: 0.5; transparent: true; emissive: #ff1493" smooth-teleport="target: 0 1.6 60" class="clickable" event-set__click="_target: #sound-system; _delay: 0; components: sound.play"></a-cylinder>
+      <a-cylinder position="20 0.05 60" radius="1.5" height="0.05" material="color: #ff69b4; opacity: 0.5; transparent: true; emissive: #ff1493" smooth-teleport="target: 20 1.6 60" class="clickable" event-set__click="_target: #sound-system; _delay: 0; components: sound.play"></a-cylinder>
+      <a-cylinder position="40 0.05 60" radius="1.5" height="0.05" material="color: #ff69b4; opacity: 0.5; transparent: true; emissive: #ff1493" smooth-teleport="target: 40 1.6 60" class="clickable" event-set__click="_target: #sound-system; _delay: 0; components: sound.play"></a-cylinder>
+      <a-cylinder position="60 0.05 60" radius="1.5" height="0.05" material="color: #ff69b4; opacity: 0.5; transparent: true; emissive: #ff1493" smooth-teleport="target: 60 1.6 60" class="clickable" event-set__click="_target: #sound-system; _delay: 0; components: sound.play"></a-cylinder>
+      <a-cylinder position="80 0.05 60" radius="1.5" height="0.05" material="color: #ff69b4; opacity: 0.5; transparent: true; emissive: #ff1493" smooth-teleport="target: 80 1.6 60" class="clickable" event-set__click="_target: #sound-system; _delay: 0; components: sound.play"></a-cylinder>
+      <a-cylinder position="-20 0.05 60" radius="1.5" height="0.05" material="color: #ff69b4; opacity: 0.5; transparent: true; emissive: #ff1493" smooth-teleport="target: -20 1.6 60" class="clickable" event-set__click="_target: #sound-system; _delay: 0; components: sound.play"></a-cylinder>
+      <a-cylinder position="-40 0.05 60" radius="1.5" height="0.05" material="color: #ff69b4; opacity: 0.5; transparent: true; emissive: #ff1493" smooth-teleport="target: -40 1.6 60" class="clickable" event-set__click="_target: #sound-system; _delay: 0; components: sound.play"></a-cylinder>
+      <a-cylinder position="-60 0.05 60" radius="1.5" height="0.05" material="color: #ff69b4; opacity: 0.5; transparent: true; emissive: #ff1493" smooth-teleport="target: -60 1.6 60" class="clickable" event-set__click="_target: #sound-system; _delay: 0; components: sound.play"></a-cylinder>
+      <a-cylinder position="-80 0.05 60" radius="1.5" height="0.05" material="color: #ff69b4; opacity: 0.5; transparent: true; emissive: #ff1493" smooth-teleport="target: -80 1.6 60" class="clickable" event-set__click="_target: #sound-system; _delay: 0; components: sound.play"></a-cylinder>
       
-      <a-cylinder position="0 0.05 80" radius="1.5" height="0.05" material="color: #ff69b4; opacity: 0.5; transparent: true; emissive: #ff1493" smooth-teleport="target: 0 1.6 80" event-set__click="_target: #sound-system; _delay: 0; components: sound.play"></a-cylinder>
-      <a-cylinder position="20 0.05 80" radius="1.5" height="0.05" material="color: #ff69b4; opacity: 0.5; transparent: true; emissive: #ff1493" smooth-teleport="target: 20 1.6 80" event-set__click="_target: #sound-system; _delay: 0; components: sound.play"></a-cylinder>
-      <a-cylinder position="40 0.05 80" radius="1.5" height="0.05" material="color: #ff69b4; opacity: 0.5; transparent: true; emissive: #ff1493" smooth-teleport="target: 40 1.6 80" event-set__click="_target: #sound-system; _delay: 0; components: sound.play"></a-cylinder>
-      <a-cylinder position="60 0.05 80" radius="1.5" height="0.05" material="color: #ff69b4; opacity: 0.5; transparent: true; emissive: #ff1493" smooth-teleport="target: 60 1.6 80" event-set__click="_target: #sound-system; _delay: 0; components: sound.play"></a-cylinder>
-      <a-cylinder position="80 0.05 80" radius="1.5" height="0.05" material="color: #ff69b4; opacity: 0.5; transparent: true; emissive: #ff1493" smooth-teleport="target: 80 1.6 80" event-set__click="_target: #sound-system; _delay: 0; components: sound.play"></a-cylinder>
-      <a-cylinder position="-20 0.05 80" radius="1.5" height="0.05" material="color: #ff69b4; opacity: 0.5; transparent: true; emissive: #ff1493" smooth-teleport="target: -20 1.6 80" event-set__click="_target: #sound-system; _delay: 0; components: sound.play"></a-cylinder>
-      <a-cylinder position="-40 0.05 80" radius="1.5" height="0.05" material="color: #ff69b4; opacity: 0.5; transparent: true; emissive: #ff1493" smooth-teleport="target: -40 1.6 80" event-set__click="_target: #sound-system; _delay: 0; components: sound.play"></a-cylinder>
-      <a-cylinder position="-60 0.05 80" radius="1.5" height="0.05" material="color: #ff69b4; opacity: 0.5; transparent: true; emissive: #ff1493" smooth-teleport="target: -60 1.6 80" event-set__click="_target: #sound-system; _delay: 0; components: sound.play"></a-cylinder>
-      <a-cylinder position="-80 0.05 80" radius="1.5" height="0.05" material="color: #ff69b4; opacity: 0.5; transparent: true; emissive: #ff1493" smooth-teleport="target: -80 1.6 80" event-set__click="_target: #sound-system; _delay: 0; components: sound.play"></a-cylinder>
+      <a-cylinder position="0 0.05 80" radius="1.5" height="0.05" material="color: #ff69b4; opacity: 0.5; transparent: true; emissive: #ff1493" smooth-teleport="target: 0 1.6 80" class="clickable" event-set__click="_target: #sound-system; _delay: 0; components: sound.play"></a-cylinder>
+      <a-cylinder position="20 0.05 80" radius="1.5" height="0.05" material="color: #ff69b4; opacity: 0.5; transparent: true; emissive: #ff1493" smooth-teleport="target: 20 1.6 80" class="clickable" event-set__click="_target: #sound-system; _delay: 0; components: sound.play"></a-cylinder>
+      <a-cylinder position="40 0.05 80" radius="1.5" height="0.05" material="color: #ff69b4; opacity: 0.5; transparent: true; emissive: #ff1493" smooth-teleport="target: 40 1.6 80" class="clickable" event-set__click="_target: #sound-system; _delay: 0; components: sound.play"></a-cylinder>
+      <a-cylinder position="60 0.05 80" radius="1.5" height="0.05" material="color: #ff69b4; opacity: 0.5; transparent: true; emissive: #ff1493" smooth-teleport="target: 60 1.6 80" class="clickable" event-set__click="_target: #sound-system; _delay: 0; components: sound.play"></a-cylinder>
+      <a-cylinder position="80 0.05 80" radius="1.5" height="0.05" material="color: #ff69b4; opacity: 0.5; transparent: true; emissive: #ff1493" smooth-teleport="target: 80 1.6 80" class="clickable" event-set__click="_target: #sound-system; _delay: 0; components: sound.play"></a-cylinder>
+      <a-cylinder position="-20 0.05 80" radius="1.5" height="0.05" material="color: #ff69b4; opacity: 0.5; transparent: true; emissive: #ff1493" smooth-teleport="target: -20 1.6 80" class="clickable" event-set__click="_target: #sound-system; _delay: 0; components: sound.play"></a-cylinder>
+      <a-cylinder position="-40 0.05 80" radius="1.5" height="0.05" material="color: #ff69b4; opacity: 0.5; transparent: true; emissive: #ff1493" smooth-teleport="target: -40 1.6 80" class="clickable" event-set__click="_target: #sound-system; _delay: 0; components: sound.play"></a-cylinder>
+      <a-cylinder position="-60 0.05 80" radius="1.5" height="0.05" material="color: #ff69b4; opacity: 0.5; transparent: true; emissive: #ff1493" smooth-teleport="target: -60 1.6 80" class="clickable" event-set__click="_target: #sound-system; _delay: 0; components: sound.play"></a-cylinder>
+      <a-cylinder position="-80 0.05 80" radius="1.5" height="0.05" material="color: #ff69b4; opacity: 0.5; transparent: true; emissive: #ff1493" smooth-teleport="target: -80 1.6 80" class="clickable" event-set__click="_target: #sound-system; _delay: 0; components: sound.play"></a-cylinder>
       
       <!-- 负Z轴 -->
-      <a-cylinder position="0 0.05 -20" radius="1.5" height="0.05" material="color: #ff69b4; opacity: 0.5; transparent: true; emissive: #ff1493" smooth-teleport="target: 0 1.6 -20" event-set__click="_target: #sound-system; _delay: 0; components: sound.play"></a-cylinder>
-      <a-cylinder position="20 0.05 -20" radius="1.5" height="0.05" material="color: #ff69b4; opacity: 0.5; transparent: true; emissive: #ff1493" smooth-teleport="target: 20 1.6 -20" event-set__click="_target: #sound-system; _delay: 0; components: sound.play"></a-cylinder>
-      <a-cylinder position="40 0.05 -20" radius="1.5" height="0.05" material="color: #ff69b4; opacity: 0.5; transparent: true; emissive: #ff1493" smooth-teleport="target: 40 1.6 -20" event-set__click="_target: #sound-system; _delay: 0; components: sound.play"></a-cylinder>
-      <a-cylinder position="60 0.05 -20" radius="1.5" height="0.05" material="color: #ff69b4; opacity: 0.5; transparent: true; emissive: #ff1493" smooth-teleport="target: 60 1.6 -20" event-set__click="_target: #sound-system; _delay: 0; components: sound.play"></a-cylinder>
-      <a-cylinder position="80 0.05 -20" radius="1.5" height="0.05" material="color: #ff69b4; opacity: 0.5; transparent: true; emissive: #ff1493" smooth-teleport="target: 80 1.6 -20" event-set__click="_target: #sound-system; _delay: 0; components: sound.play"></a-cylinder>
-      <a-cylinder position="-20 0.05 -20" radius="1.5" height="0.05" material="color: #ff69b4; opacity: 0.5; transparent: true; emissive: #ff1493" smooth-teleport="target: -20 1.6 -20" event-set__click="_target: #sound-system; _delay: 0; components: sound.play"></a-cylinder>
-      <a-cylinder position="-40 0.05 -20" radius="1.5" height="0.05" material="color: #ff69b4; opacity: 0.5; transparent: true; emissive: #ff1493" smooth-teleport="target: -40 1.6 -20" event-set__click="_target: #sound-system; _delay: 0; components: sound.play"></a-cylinder>
-      <a-cylinder position="-60 0.05 -20" radius="1.5" height="0.05" material="color: #ff69b4; opacity: 0.5; transparent: true; emissive: #ff1493" smooth-teleport="target: -60 1.6 -20" event-set__click="_target: #sound-system; _delay: 0; components: sound.play"></a-cylinder>
-      <a-cylinder position="-80 0.05 -20" radius="1.5" height="0.05" material="color: #ff69b4; opacity: 0.5; transparent: true; emissive: #ff1493" smooth-teleport="target: -80 1.6 -20" event-set__click="_target: #sound-system; _delay: 0; components: sound.play"></a-cylinder>
+      <a-cylinder position="0 0.05 -20" radius="1.5" height="0.05" material="color: #ff69b4; opacity: 0.5; transparent: true; emissive: #ff1493" smooth-teleport="target: 0 1.6 -20" class="clickable" event-set__click="_target: #sound-system; _delay: 0; components: sound.play"></a-cylinder>
+      <a-cylinder position="20 0.05 -20" radius="1.5" height="0.05" material="color: #ff69b4; opacity: 0.5; transparent: true; emissive: #ff1493" smooth-teleport="target: 20 1.6 -20" class="clickable" event-set__click="_target: #sound-system; _delay: 0; components: sound.play"></a-cylinder>
+      <a-cylinder position="40 0.05 -20" radius="1.5" height="0.05" material="color: #ff69b4; opacity: 0.5; transparent: true; emissive: #ff1493" smooth-teleport="target: 40 1.6 -20" class="clickable" event-set__click="_target: #sound-system; _delay: 0; components: sound.play"></a-cylinder>
+      <a-cylinder position="60 0.05 -20" radius="1.5" height="0.05" material="color: #ff69b4; opacity: 0.5; transparent: true; emissive: #ff1493" smooth-teleport="target: 60 1.6 -20" class="clickable" event-set__click="_target: #sound-system; _delay: 0; components: sound.play"></a-cylinder>
+      <a-cylinder position="80 0.05 -20" radius="1.5" height="0.05" material="color: #ff69b4; opacity: 0.5; transparent: true; emissive: #ff1493" smooth-teleport="target: 80 1.6 -20" class="clickable" event-set__click="_target: #sound-system; _delay: 0; components: sound.play"></a-cylinder>
+      <a-cylinder position="-20 0.05 -20" radius="1.5" height="0.05" material="color: #ff69b4; opacity: 0.5; transparent: true; emissive: #ff1493" smooth-teleport="target: -20 1.6 -20" class="clickable" event-set__click="_target: #sound-system; _delay: 0; components: sound.play"></a-cylinder>
+      <a-cylinder position="-40 0.05 -20" radius="1.5" height="0.05" material="color: #ff69b4; opacity: 0.5; transparent: true; emissive: #ff1493" smooth-teleport="target: -40 1.6 -20" class="clickable" event-set__click="_target: #sound-system; _delay: 0; components: sound.play"></a-cylinder>
+      <a-cylinder position="-60 0.05 -20" radius="1.5" height="0.05" material="color: #ff69b4; opacity: 0.5; transparent: true; emissive: #ff1493" smooth-teleport="target: -60 1.6 -20" class="clickable" event-set__click="_target: #sound-system; _delay: 0; components: sound.play"></a-cylinder>
+      <a-cylinder position="-80 0.05 -20" radius="1.5" height="0.05" material="color: #ff69b4; opacity: 0.5; transparent: true; emissive: #ff1493" smooth-teleport="target: -80 1.6 -20" class="clickable" event-set__click="_target: #sound-system; _delay: 0; components: sound.play"></a-cylinder>
       
-      <a-cylinder position="0 0.05 -40" radius="1.5" height="0.05" material="color: #ff69b4; opacity: 0.5; transparent: true; emissive: #ff1493" smooth-teleport="target: 0 1.6 -40" event-set__click="_target: #sound-system; _delay: 0; components: sound.play"></a-cylinder>
-      <a-cylinder position="20 0.05 -40" radius="1.5" height="0.05" material="color: #ff69b4; opacity: 0.5; transparent: true; emissive: #ff1493" smooth-teleport="target: 20 1.6 -40" event-set__click="_target: #sound-system; _delay: 0; components: sound.play"></a-cylinder>
-      <a-cylinder position="40 0.05 -40" radius="1.5" height="0.05" material="color: #ff69b4; opacity: 0.5; transparent: true; emissive: #ff1493" smooth-teleport="target: 40 1.6 -40" event-set__click="_target: #sound-system; _delay: 0; components: sound.play"></a-cylinder>
-      <a-cylinder position="60 0.05 -40" radius="1.5" height="0.05" material="color: #ff69b4; opacity: 0.5; transparent: true; emissive: #ff1493" smooth-teleport="target: 60 1.6 -40" event-set__click="_target: #sound-system; _delay: 0; components: sound.play"></a-cylinder>
-      <a-cylinder position="80 0.05 -40" radius="1.5" height="0.05" material="color: #ff69b4; opacity: 0.5; transparent: true; emissive: #ff1493" smooth-teleport="target: 80 1.6 -40" event-set__click="_target: #sound-system; _delay: 0; components: sound.play"></a-cylinder>
-      <a-cylinder position="-20 0.05 -40" radius="1.5" height="0.05" material="color: #ff69b4; opacity: 0.5; transparent: true; emissive: #ff1493" smooth-teleport="target: -20 1.6 -40" event-set__click="_target: #sound-system; _delay: 0; components: sound.play"></a-cylinder>
-      <a-cylinder position="-40 0.05 -40" radius="1.5" height="0.05" material="color: #ff69b4; opacity: 0.5; transparent: true; emissive: #ff1493" smooth-teleport="target: -40 1.6 -40" event-set__click="_target: #sound-system; _delay: 0; components: sound.play"></a-cylinder>
-      <a-cylinder position="-60 0.05 -40" radius="1.5" height="0.05" material="color: #ff69b4; opacity: 0.5; transparent: true; emissive: #ff1493" smooth-teleport="target: -60 1.6 -40" event-set__click="_target: #sound-system; _delay: 0; components: sound.play"></a-cylinder>
-      <a-cylinder position="-80 0.05 -40" radius="1.5" height="0.05" material="color: #ff69b4; opacity: 0.5; transparent: true; emissive: #ff1493" smooth-teleport="target: -80 1.6 -40" event-set__click="_target: #sound-system; _delay: 0; components: sound.play"></a-cylinder>
+      <a-cylinder position="0 0.05 -40" radius="1.5" height="0.05" material="color: #ff69b4; opacity: 0.5; transparent: true; emissive: #ff1493" smooth-teleport="target: 0 1.6 -40" class="clickable" event-set__click="_target: #sound-system; _delay: 0; components: sound.play"></a-cylinder>
+      <a-cylinder position="20 0.05 -40" radius="1.5" height="0.05" material="color: #ff69b4; opacity: 0.5; transparent: true; emissive: #ff1493" smooth-teleport="target: 20 1.6 -40" class="clickable" event-set__click="_target: #sound-system; _delay: 0; components: sound.play"></a-cylinder>
+      <a-cylinder position="40 0.05 -40" radius="1.5" height="0.05" material="color: #ff69b4; opacity: 0.5; transparent: true; emissive: #ff1493" smooth-teleport="target: 40 1.6 -40" class="clickable" event-set__click="_target: #sound-system; _delay: 0; components: sound.play"></a-cylinder>
+      <a-cylinder position="60 0.05 -40" radius="1.5" height="0.05" material="color: #ff69b4; opacity: 0.5; transparent: true; emissive: #ff1493" smooth-teleport="target: 60 1.6 -40" class="clickable" event-set__click="_target: #sound-system; _delay: 0; components: sound.play"></a-cylinder>
+      <a-cylinder position="80 0.05 -40" radius="1.5" height="0.05" material="color: #ff69b4; opacity: 0.5; transparent: true; emissive: #ff1493" smooth-teleport="target: 80 1.6 -40" class="clickable" event-set__click="_target: #sound-system; _delay: 0; components: sound.play"></a-cylinder>
+      <a-cylinder position="-20 0.05 -40" radius="1.5" height="0.05" material="color: #ff69b4; opacity: 0.5; transparent: true; emissive: #ff1493" smooth-teleport="target: -20 1.6 -40" class="clickable" event-set__click="_target: #sound-system; _delay: 0; components: sound.play"></a-cylinder>
+      <a-cylinder position="-40 0.05 -40" radius="1.5" height="0.05" material="color: #ff69b4; opacity: 0.5; transparent: true; emissive: #ff1493" smooth-teleport="target: -40 1.6 -40" class="clickable" event-set__click="_target: #sound-system; _delay: 0; components: sound.play"></a-cylinder>
+      <a-cylinder position="-60 0.05 -40" radius="1.5" height="0.05" material="color: #ff69b4; opacity: 0.5; transparent: true; emissive: #ff1493" smooth-teleport="target: -60 1.6 -40" class="clickable" event-set__click="_target: #sound-system; _delay: 0; components: sound.play"></a-cylinder>
+      <a-cylinder position="-80 0.05 -40" radius="1.5" height="0.05" material="color: #ff69b4; opacity: 0.5; transparent: true; emissive: #ff1493" smooth-teleport="target: -80 1.6 -40" class="clickable" event-set__click="_target: #sound-system; _delay: 0; components: sound.play"></a-cylinder>
       
-      <a-cylinder position="0 0.05 -60" radius="1.5" height="0.05" material="color: #ff69b4; opacity: 0.5; transparent: true; emissive: #ff1493" smooth-teleport="target: 0 1.6 -60" event-set__click="_target: #sound-system; _delay: 0; components: sound.play"></a-cylinder>
-      <a-cylinder position="20 0.05 -60" radius="1.5" height="0.05" material="color: #ff69b4; opacity: 0.5; transparent: true; emissive: #ff1493" smooth-teleport="target: 20 1.6 -60" event-set__click="_target: #sound-system; _delay: 0; components: sound.play"></a-cylinder>
-      <a-cylinder position="40 0.05 -60" radius="1.5" height="0.05" material="color: #ff69b4; opacity: 0.5; transparent: true; emissive: #ff1493" smooth-teleport="target: 40 1.6 -60" event-set__click="_target: #sound-system; _delay: 0; components: sound.play"></a-cylinder>
-      <a-cylinder position="60 0.05 -60" radius="1.5" height="0.05" material="color: #ff69b4; opacity: 0.5; transparent: true; emissive: #ff1493" smooth-teleport="target: 60 1.6 -60" event-set__click="_target: #sound-system; _delay: 0; components: sound.play"></a-cylinder>
-      <a-cylinder position="80 0.05 -60" radius="1.5" height="0.05" material="color: #ff69b4; opacity: 0.5; transparent: true; emissive: #ff1493" smooth-teleport="target: 80 1.6 -60" event-set__click="_target: #sound-system; _delay: 0; components: sound.play"></a-cylinder>
-      <a-cylinder position="-20 0.05 -60" radius="1.5" height="0.05" material="color: #ff69b4; opacity: 0.5; transparent: true; emissive: #ff1493" smooth-teleport="target: -20 1.6 -60" event-set__click="_target: #sound-system; _delay: 0; components: sound.play"></a-cylinder>
-      <a-cylinder position="-40 0.05 -60" radius="1.5" height="0.05" material="color: #ff69b4; opacity: 0.5; transparent: true; emissive: #ff1493" smooth-teleport="target: -40 1.6 -60" event-set__click="_target: #sound-system; _delay: 0; components: sound.play"></a-cylinder>
-      <a-cylinder position="-60 0.05 -60" radius="1.5" height="0.05" material="color: #ff69b4; opacity: 0.5; transparent: true; emissive: #ff1493" smooth-teleport="target: -60 1.6 -60" event-set__click="_target: #sound-system; _delay: 0; components: sound.play"></a-cylinder>
-      <a-cylinder position="-80 0.05 -60" radius="1.5" height="0.05" material="color: #ff69b4; opacity: 0.5; transparent: true; emissive: #ff1493" smooth-teleport="target: -80 1.6 -60" event-set__click="_target: #sound-system; _delay: 0; components: sound.play"></a-cylinder>
+      <a-cylinder position="0 0.05 -60" radius="1.5" height="0.05" material="color: #ff69b4; opacity: 0.5; transparent: true; emissive: #ff1493" smooth-teleport="target: 0 1.6 -60" class="clickable" event-set__click="_target: #sound-system; _delay: 0; components: sound.play"></a-cylinder>
+      <a-cylinder position="20 0.05 -60" radius="1.5" height="0.05" material="color: #ff69b4; opacity: 0.5; transparent: true; emissive: #ff1493" smooth-teleport="target: 20 1.6 -60" class="clickable" event-set__click="_target: #sound-system; _delay: 0; components: sound.play"></a-cylinder>
+      <a-cylinder position="40 0.05 -60" radius="1.5" height="0.05" material="color: #ff69b4; opacity: 0.5; transparent: true; emissive: #ff1493" smooth-teleport="target: 40 1.6 -60" class="clickable" event-set__click="_target: #sound-system; _delay: 0; components: sound.play"></a-cylinder>
+      <a-cylinder position="60 0.05 -60" radius="1.5" height="0.05" material="color: #ff69b4; opacity: 0.5; transparent: true; emissive: #ff1493" smooth-teleport="target: 60 1.6 -60" class="clickable" event-set__click="_target: #sound-system; _delay: 0; components: sound.play"></a-cylinder>
+      <a-cylinder position="80 0.05 -60" radius="1.5" height="0.05" material="color: #ff69b4; opacity: 0.5; transparent: true; emissive: #ff1493" smooth-teleport="target: 80 1.6 -60" class="clickable" event-set__click="_target: #sound-system; _delay: 0; components: sound.play"></a-cylinder>
+      <a-cylinder position="-20 0.05 -60" radius="1.5" height="0.05" material="color: #ff69b4; opacity: 0.5; transparent: true; emissive: #ff1493" smooth-teleport="target: -20 1.6 -60" class="clickable" event-set__click="_target: #sound-system; _delay: 0; components: sound.play"></a-cylinder>
+      <a-cylinder position="-40 0.05 -60" radius="1.5" height="0.05" material="color: #ff69b4; opacity: 0.5; transparent: true; emissive: #ff1493" smooth-teleport="target: -40 1.6 -60" class="clickable" event-set__click="_target: #sound-system; _delay: 0; components: sound.play"></a-cylinder>
+      <a-cylinder position="-60 0.05 -60" radius="1.5" height="0.05" material="color: #ff69b4; opacity: 0.5; transparent: true; emissive: #ff1493" smooth-teleport="target: -60 1.6 -60" class="clickable" event-set__click="_target: #sound-system; _delay: 0; components: sound.play"></a-cylinder>
+      <a-cylinder position="-80 0.05 -60" radius="1.5" height="0.05" material="color: #ff69b4; opacity: 0.5; transparent: true; emissive: #ff1493" smooth-teleport="target: -80 1.6 -60" class="clickable" event-set__click="_target: #sound-system; _delay: 0; components: sound.play"></a-cylinder>
       
-      <a-cylinder position="0 0.05 -80" radius="1.5" height="0.05" material="color: #ff69b4; opacity: 0.5; transparent: true; emissive: #ff1493" smooth-teleport="target: 0 1.6 -80" event-set__click="_target: #sound-system; _delay: 0; components: sound.play"></a-cylinder>
-      <a-cylinder position="20 0.05 -80" radius="1.5" height="0.05" material="color: #ff69b4; opacity: 0.5; transparent: true; emissive: #ff1493" smooth-teleport="target: 20 1.6 -80" event-set__click="_target: #sound-system; _delay: 0; components: sound.play"></a-cylinder>
-      <a-cylinder position="40 0.05 -80" radius="1.5" height="0.05" material="color: #ff69b4; opacity: 0.5; transparent: true; emissive: #ff1493" smooth-teleport="target: 40 1.6 -80" event-set__click="_target: #sound-system; _delay: 0; components: sound.play"></a-cylinder>
-      <a-cylinder position="60 0.05 -80" radius="1.5" height="0.05" material="color: #ff69b4; opacity: 0.5; transparent: true; emissive: #ff1493" smooth-teleport="target: 60 1.6 -80" event-set__click="_target: #sound-system; _delay: 0; components: sound.play"></a-cylinder>
-      <a-cylinder position="80 0.05 -80" radius="1.5" height="0.05" material="color: #ff69b4; opacity: 0.5; transparent: true; emissive: #ff1493" smooth-teleport="target: 80 1.6 -80" event-set__click="_target: #sound-system; _delay: 0; components: sound.play"></a-cylinder>
-      <a-cylinder position="-20 0.05 -80" radius="1.5" height="0.05" material="color: #ff69b4; opacity: 0.5; transparent: true; emissive: #ff1493" smooth-teleport="target: -20 1.6 -80" event-set__click="_target: #sound-system; _delay: 0; components: sound.play"></a-cylinder>
-      <a-cylinder position="-40 0.05 -80" radius="1.5" height="0.05" material="color: #ff69b4; opacity: 0.5; transparent: true; emissive: #ff1493" smooth-teleport="target: -40 1.6 -80" event-set__click="_target: #sound-system; _delay: 0; components: sound.play"></a-cylinder>
-      <a-cylinder position="-60 0.05 -80" radius="1.5" height="0.05" material="color: #ff69b4; opacity: 0.5; transparent: true; emissive: #ff1493" smooth-teleport="target: -60 1.6 -80" event-set__click="_target: #sound-system; _delay: 0; components: sound.play"></a-cylinder>
-      <a-cylinder position="-80 0.05 -80" radius="1.5" height="0.05" material="color: #ff69b4; opacity: 0.5; transparent: true; emissive: #ff1493" smooth-teleport="target: -80 1.6 -80" event-set__click="_target: #sound-system; _delay: 0; components: sound.play"></a-cylinder>
+      <a-cylinder position="0 0.05 -80" radius="1.5" height="0.05" material="color: #ff69b4; opacity: 0.5; transparent: true; emissive: #ff1493" smooth-teleport="target: 0 1.6 -80" class="clickable" event-set__click="_target: #sound-system; _delay: 0; components: sound.play"></a-cylinder>
+      <a-cylinder position="20 0.05 -80" radius="1.5" height="0.05" material="color: #ff69b4; opacity: 0.5; transparent: true; emissive: #ff1493" smooth-teleport="target: 20 1.6 -80" class="clickable" event-set__click="_target: #sound-system; _delay: 0; components: sound.play"></a-cylinder>
+      <a-cylinder position="40 0.05 -80" radius="1.5" height="0.05" material="color: #ff69b4; opacity: 0.5; transparent: true; emissive: #ff1493" smooth-teleport="target: 40 1.6 -80" class="clickable" event-set__click="_target: #sound-system; _delay: 0; components: sound.play"></a-cylinder>
+      <a-cylinder position="60 0.05 -80" radius="1.5" height="0.05" material="color: #ff69b4; opacity: 0.5; transparent: true; emissive: #ff1493" smooth-teleport="target: 60 1.6 -80" class="clickable" event-set__click="_target: #sound-system; _delay: 0; components: sound.play"></a-cylinder>
+      <a-cylinder position="80 0.05 -80" radius="1.5" height="0.05" material="color: #ff69b4; opacity: 0.5; transparent: true; emissive: #ff1493" smooth-teleport="target: 80 1.6 -80" class="clickable" event-set__click="_target: #sound-system; _delay: 0; components: sound.play"></a-cylinder>
+      <a-cylinder position="-20 0.05 -80" radius="1.5" height="0.05" material="color: #ff69b4; opacity: 0.5; transparent: true; emissive: #ff1493" smooth-teleport="target: -20 1.6 -80" class="clickable" event-set__click="_target: #sound-system; _delay: 0; components: sound.play"></a-cylinder>
+      <a-cylinder position="-40 0.05 -80" radius="1.5" height="0.05" material="color: #ff69b4; opacity: 0.5; transparent: true; emissive: #ff1493" smooth-teleport="target: -40 1.6 -80" class="clickable" event-set__click="_target: #sound-system; _delay: 0; components: sound.play"></a-cylinder>
+      <a-cylinder position="-60 0.05 -80" radius="1.5" height="0.05" material="color: #ff69b4; opacity: 0.5; transparent: true; emissive: #ff1493" smooth-teleport="target: -60 1.6 -80" class="clickable" event-set__click="_target: #sound-system; _delay: 0; components: sound.play"></a-cylinder>
+      <a-cylinder position="-80 0.05 -80" radius="1.5" height="0.05" material="color: #ff69b4; opacity: 0.5; transparent: true; emissive: #ff1493" smooth-teleport="target: -80 1.6 -80" class="clickable" event-set__click="_target: #sound-system; _delay: 0; components: sound.play"></a-cylinder>
     </a-entity>
 
     <!-- LIGHTS -->
@@ -407,7 +422,8 @@
           fuse="true"
           fuse-timeout="1000"
           geometry="primitive: ring; radiusInner: 0.015; radiusOuter: 0.025"
-          material="color: white; shader: flat">
+          material="color: white; shader: flat"
+          raycaster="objects: .clickable">
         </a-cursor>
       </a-camera>
     </a-entity>
@@ -418,7 +434,7 @@
   <div id="info-panel"></div>
 
   <div class="controls-hint">🟣 WASD移动 · 凝视传送 · 点击物体查看信息</div>
-  <div class="info">🎵 环境音效 · 点击/凝视触发信息 · 传送音效</div>
+  <div class="info">🎵 环境音效 · 凝视触发信息 · 传送音效</div>
   <script src="script.js"></script>
 </body>
 </html>
