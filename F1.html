@@ -93,33 +93,33 @@
     <a-entity gltf-model="#snowGround" position="0 -4 0" rotation="0 0 0" scale="1 1 1" shadow></a-entity>
 
     <!-- ★★★ 紫晶石（摆满地面） ★★★ -->
-    <a-entity gltf-model="#crystal" position="-2 -3.5 2" rotation="0 0 0" scale="0.8 0.8 0.8" shadow class="clickable" data-item="crystal"></a-entity>
-    <a-entity gltf-model="#crystal" position="3 -3.5 -1" rotation="0 0 0" scale="1 1 1" shadow class="clickable" data-item="crystal"></a-entity>
-    <a-entity gltf-model="#crystal" position="-1 -3.5 -3" rotation="0 0 0" scale="0.9 0.9 0.9" shadow class="clickable" data-item="crystal"></a-entity>
-    <a-entity gltf-model="#crystal" position="4 -3.5 3" rotation="0 0 0" scale="1.1 1.1 1.1" shadow class="clickable" data-item="crystal"></a-entity>
-    <a-entity gltf-model="#crystal" position="-4 -3.5 -2" rotation="0 0 0" scale="0.7 0.7 0.7" shadow class="clickable" data-item="crystal"></a-entity>
-    <a-entity gltf-model="#crystal" position="5 -3.5 -4" rotation="0 0 0" scale="0.9 0.9 0.9" shadow class="clickable" data-item="crystal"></a-entity>
-    <a-entity gltf-model="#crystal" position="-5 -3.5 4" rotation="0 0 0" scale="1.2 1.2 1.2" shadow class="clickable" data-item="crystal"></a-entity>
-    <a-entity gltf-model="#crystal" position="0 -3.5 5" rotation="0 0 0" scale="0.8 0.8 0.8" shadow class="clickable" data-item="crystal"></a-entity>
-    <a-entity gltf-model="#crystal" position="6 -3.5 1" rotation="0 0 0" scale="1 1 1" shadow class="clickable" data-item="crystal"></a-entity>
-    <a-entity gltf-model="#crystal" position="-6 -3.5 -1" rotation="0 0 0" scale="1.1 1.1 1.1" shadow class="clickable" data-item="crystal"></a-entity>
+    <a-entity gltf-model="#crystal" position="-2 -3.5 2" rotation="0 0 0" scale="0.8 0.8 0.8" shadow class="item" data-item="crystal"></a-entity>
+    <a-entity gltf-model="#crystal" position="3 -3.5 -1" rotation="0 0 0" scale="1 1 1" shadow class="item" data-item="crystal"></a-entity>
+    <a-entity gltf-model="#crystal" position="-1 -3.5 -3" rotation="0 0 0" scale="0.9 0.9 0.9" shadow class="item" data-item="crystal"></a-entity>
+    <a-entity gltf-model="#crystal" position="4 -3.5 3" rotation="0 0 0" scale="1.1 1.1 1.1" shadow class="item" data-item="crystal"></a-entity>
+    <a-entity gltf-model="#crystal" position="-4 -3.5 -2" rotation="0 0 0" scale="0.7 0.7 0.7" shadow class="item" data-item="crystal"></a-entity>
+    <a-entity gltf-model="#crystal" position="5 -3.5 -4" rotation="0 0 0" scale="0.9 0.9 0.9" shadow class="item" data-item="crystal"></a-entity>
+    <a-entity gltf-model="#crystal" position="-5 -3.5 4" rotation="0 0 0" scale="1.2 1.2 1.2" shadow class="item" data-item="crystal"></a-entity>
+    <a-entity gltf-model="#crystal" position="0 -3.5 5" rotation="0 0 0" scale="0.8 0.8 0.8" shadow class="item" data-item="crystal"></a-entity>
+    <a-entity gltf-model="#crystal" position="6 -3.5 1" rotation="0 0 0" scale="1 1 1" shadow class="item" data-item="crystal"></a-entity>
+    <a-entity gltf-model="#crystal" position="-6 -3.5 -1" rotation="0 0 0" scale="1.1 1.1 1.1" shadow class="item" data-item="crystal"></a-entity>
 
     <!-- ★★★ 15件浮动物品（保留原有位置和动画） ★★★ -->
-    <a-entity gltf-model="#silverDistiller" position="-8 3 2" rotation="0 0 0" scale="0.05 0.05 0.05" shadow class="clickable" data-item="silverDistiller" animation="property: position; to: -8 4 2; dur: 2000; dir: alternate; loop: true; easing: easeInOutSine"></a-entity>
-    <a-entity gltf-model="#bloodyGoblet" position="4 -1 -27" rotation="0 0 0" scale="2 2 2" shadow class="clickable" data-item="bloodyGoblet" animation="property: position; to: 4 0 -27; dur: 1800; dir: alternate; loop: true; easing: easeInOutSine"></a-entity>
-    <a-entity gltf-model="#egyptClay" position="-4 2.8 7" rotation="0 0 0" scale="0.5 0.5 0.5" shadow class="clickable" data-item="egyptClay" animation="property: position; to: -4 3.8 7; dur: 2200; dir: alternate; loop: true; easing: easeInOutSine"></a-entity>
-    <a-entity gltf-model="#box" position="5 3.2 6" rotation="0 0 0" scale="14 14 14" shadow class="clickable" data-item="box" animation="property: position; to: 5 4.2 6; dur: 1900; dir: alternate; loop: true; easing: easeInOutSine"></a-entity>
-    <a-entity gltf-model="#mirror" position="-4 2.6 -15" rotation="0 0 0" scale="4 4 4" shadow class="clickable" data-item="mirror" animation="property: position; to: -4 3.6 -15; dur: 2100; dir: alternate; loop: true; easing: easeInOutSine"></a-entity>
-    <a-entity gltf-model="#tornBook" position="6 2.9 -60" rotation="0 0 0" scale="0.1 0.1 0.1" shadow class="clickable" data-item="tornBook" animation="property: position; to: 6 3.9 -60; dur: 1700; dir: alternate; loop: true; easing: easeInOutSine"></a-entity>
-    <a-entity gltf-model="#alienChalice" position="9 3.4 17" rotation="0 0 0" scale="0.01 0.01 0.01" shadow class="clickable" data-item="alienChalice" animation="property: position; to: 9 4.4 17; dur: 2300; dir: alternate; loop: true; easing: easeInOutSine"></a-entity>
-    <a-entity gltf-model="#copperBrooch" position="9 2.7 2" rotation="0 0 0" scale="0.1 0.1 0.1" shadow class="clickable" data-item="copperBrooch" animation="property: position; to: 9 3.7 2; dur: 2000; dir: alternate; loop: true; easing: easeInOutSine"></a-entity>
-    <a-entity gltf-model="#grapeEarring" position="-3 3.1 8" rotation="0 0 0" scale="0.1 0.1 0.1" shadow class="clickable" data-item="grapeEarring" animation="property: position; to: -3 4.1 8; dur: 1850; dir: alternate; loop: true; easing: easeInOutSine"></a-entity>
-    <a-entity gltf-model="#censer" position="3 2.4 8" rotation="0 0 0" scale="1 1 1" shadow class="clickable" data-item="censer" animation="property: position; to: 3 3.4 8; dur: 2150; dir: alternate; loop: true; easing: easeInOutSine"></a-entity>
-    <a-entity gltf-model="#copperBowl" position="-7 3.6 47" rotation="0 0 0" scale="1 1 1" shadow class="clickable" data-item="copperBowl" animation="property: position; to: -7 4.6 47; dur: 1950; dir: alternate; loop: true; easing: easeInOutSine"></a-entity>
-    <a-entity gltf-model="#turquoiseLion" position="8 2.8 -2" rotation="0 0 0" scale="17 17 17" shadow class="clickable" data-item="turquoiseLion" animation="property: position; to: 8 3.8 -2; dur: 2050; dir: alternate; loop: true; easing: easeInOutSine"></a-entity>
-    <a-entity gltf-model="#oneEaredAlpaca" position="-5 3.3 -7" rotation="0 0 0" scale="0.5 0.5 0.5" shadow class="clickable" data-item="oneEaredAlpaca" animation="property: position; to: -5 4.3 -7; dur: 2250; dir: alternate; loop: true; easing: easeInOutSine"></a-entity>
-    <a-entity gltf-model="#goldCandlestick" position="4 2.5 -8" rotation="0 0 0" scale="11 11 11" shadow class="clickable" data-item="goldCandlestick" animation="property: position; to: 4 3.5 -8; dur: 1750; dir: alternate; loop: true; easing: easeInOutSine"></a-entity>
-    <a-entity gltf-model="#alienLiddedCup" position="-2 3.7 11" rotation="0 0 0" scale="0.1 0.1 0.1" shadow class="clickable" data-item="alienLiddedCup" animation="property: position; to: -2 4.7 11; dur: 2400; dir: alternate; loop: true; easing: easeInOutSine"></a-entity>
+    <a-entity gltf-model="#silverDistiller" position="-8 3 2" rotation="0 0 0" scale="0.05 0.05 0.05" shadow class="item" data-item="silverDistiller" animation="property: position; to: -8 4 2; dur: 2000; dir: alternate; loop: true; easing: easeInOutSine"></a-entity>
+    <a-entity gltf-model="#bloodyGoblet" position="4 -1 -27" rotation="0 0 0" scale="2 2 2" shadow class="item" data-item="bloodyGoblet" animation="property: position; to: 4 0 -27; dur: 1800; dir: alternate; loop: true; easing: easeInOutSine"></a-entity>
+    <a-entity gltf-model="#egyptClay" position="-4 2.8 7" rotation="0 0 0" scale="0.5 0.5 0.5" shadow class="item" data-item="egyptClay" animation="property: position; to: -4 3.8 7; dur: 2200; dir: alternate; loop: true; easing: easeInOutSine"></a-entity>
+    <a-entity gltf-model="#box" position="5 3.2 6" rotation="0 0 0" scale="14 14 14" shadow class="item" data-item="box" animation="property: position; to: 5 4.2 6; dur: 1900; dir: alternate; loop: true; easing: easeInOutSine"></a-entity>
+    <a-entity gltf-model="#mirror" position="-4 2.6 -15" rotation="0 0 0" scale="4 4 4" shadow class="item" data-item="mirror" animation="property: position; to: -4 3.6 -15; dur: 2100; dir: alternate; loop: true; easing: easeInOutSine"></a-entity>
+    <a-entity gltf-model="#tornBook" position="6 2.9 -60" rotation="0 0 0" scale="0.1 0.1 0.1" shadow class="item" data-item="tornBook" animation="property: position; to: 6 3.9 -60; dur: 1700; dir: alternate; loop: true; easing: easeInOutSine"></a-entity>
+    <a-entity gltf-model="#alienChalice" position="9 3.4 17" rotation="0 0 0" scale="0.01 0.01 0.01" shadow class="item" data-item="alienChalice" animation="property: position; to: 9 4.4 17; dur: 2300; dir: alternate; loop: true; easing: easeInOutSine"></a-entity>
+    <a-entity gltf-model="#copperBrooch" position="9 2.7 2" rotation="0 0 0" scale="0.1 0.1 0.1" shadow class="item" data-item="copperBrooch" animation="property: position; to: 9 3.7 2; dur: 2000; dir: alternate; loop: true; easing: easeInOutSine"></a-entity>
+    <a-entity gltf-model="#grapeEarring" position="-3 3.1 8" rotation="0 0 0" scale="0.1 0.1 0.1" shadow class="item" data-item="grapeEarring" animation="property: position; to: -3 4.1 8; dur: 1850; dir: alternate; loop: true; easing: easeInOutSine"></a-entity>
+    <a-entity gltf-model="#censer" position="3 2.4 8" rotation="0 0 0" scale="1 1 1" shadow class="item" data-item="censer" animation="property: position; to: 3 3.4 8; dur: 2150; dir: alternate; loop: true; easing: easeInOutSine"></a-entity>
+    <a-entity gltf-model="#copperBowl" position="-7 3.6 47" rotation="0 0 0" scale="1 1 1" shadow class="item" data-item="copperBowl" animation="property: position; to: -7 4.6 47; dur: 1950; dir: alternate; loop: true; easing: easeInOutSine"></a-entity>
+    <a-entity gltf-model="#turquoiseLion" position="8 2.8 -2" rotation="0 0 0" scale="17 17 17" shadow class="item" data-item="turquoiseLion" animation="property: position; to: 8 3.8 -2; dur: 2050; dir: alternate; loop: true; easing: easeInOutSine"></a-entity>
+    <a-entity gltf-model="#oneEaredAlpaca" position="-5 3.3 -7" rotation="0 0 0" scale="0.5 0.5 0.5" shadow class="item" data-item="oneEaredAlpaca" animation="property: position; to: -5 4.3 -7; dur: 2250; dir: alternate; loop: true; easing: easeInOutSine"></a-entity>
+    <a-entity gltf-model="#goldCandlestick" position="4 2.5 -8" rotation="0 0 0" scale="11 11 11" shadow class="item" data-item="goldCandlestick" animation="property: position; to: 4 3.5 -8; dur: 1750; dir: alternate; loop: true; easing: easeInOutSine"></a-entity>
+    <a-entity gltf-model="#alienLiddedCup" position="-2 3.7 11" rotation="0 0 0" scale="0.1 0.1 0.1" shadow class="item" data-item="alienLiddedCup" animation="property: position; to: -2 4.7 11; dur: 2400; dir: alternate; loop: true; easing: easeInOutSine"></a-entity>
 
     <!-- ★★★ 拆封模型 ★★★ -->
     <a-entity gltf-model="#unpackModel" position="0 4 0" rotation="0 0 0" scale="7 7 7" animation="property: rotation; to: 0 360 0; loop: true; dur: 8000; easing: linear" shadow></a-entity>
@@ -287,13 +287,13 @@
 
     <!-- CAMERA -->
     <a-entity id="rig" position="0 1.6 8">
-      <a-camera look-controls wasd-controls="acceleration: 100; fly: false; speed: 15">
+      <a-camera look-controls wasd-controls="acceleration: 100; fly: false; speed: 177">
         <a-cursor
           fuse="true"
           fuse-timeout="800"
           geometry="primitive: ring; radiusInner: 0.015; radiusOuter: 0.025"
           material="color: white; shader: flat"
-          raycaster="objects: .clickable">
+          raycaster="objects: .item">
         </a-cursor>
       </a-camera>
     </a-entity>
@@ -622,7 +622,7 @@
     });
 
     // 注册所有物品
-    document.querySelectorAll('.clickable[data-item]').forEach(el => {
+    document.querySelectorAll('.item[data-item]').forEach(el => {
       const key = el.dataset.item;
       if (key && ITEM_DATA[key]) {
         el.setAttribute('gaze-info', `itemKey: ${key}`);
@@ -691,7 +691,7 @@ setTimeout(() => {
 
     document.addEventListener('click', function(e) {
       const soundSystem = document.querySelector('#sound-system');
-      if (soundSystem && e.target.closest('.clickable')) {
+      if (soundSystem && e.target.closest('.item')) {
         const clickSound = soundSystem.querySelector('#click-sound');
         if (clickSound) clickSound.components.sound.playSound();
       }
