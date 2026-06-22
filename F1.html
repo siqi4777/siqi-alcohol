@@ -452,6 +452,35 @@
     const alcoholValue = document.getElementById('alcohol-value');
     const completionEl = document.getElementById('completion');
 
+    // 获取 cursor 和 raycaster 的引用，用于后续刷新
+    let cursorEl = null;
+    let raycasterComp = null;
+
+    function getRaycaster() {
+      if (!cursorEl) {
+        cursorEl = document.querySelector('[raycaster]');
+        if (cursorEl && cursorEl.components && cursorEl.components.raycaster) {
+          raycasterComp = cursorEl.components.raycaster;
+        }
+      }
+      return raycasterComp;
+    }
+
+    // 强制刷新 Raycaster（在传送后、面板关闭后调用）
+    function refreshRaycaster() {
+      const rc = getRaycaster();
+      if (rc) {
+        rc.refreshObjects();
+        // 强制重新计算射线
+        if (cursorEl && cursorEl.object3D) {
+          cursorEl.object3D.updateMatrixWorld(true);
+        }
+      }
+    }
+
+    // 定期刷新 Raycaster（防止动画导致检测失效）
+    setInterval(refreshRaycaster, 3000);
+
     function applyEchoEffect() {
       const soundSystem = document.querySelector('#sound-system');
       const ambient = soundSystem ? soundSystem.querySelector('a-sound') : null;
@@ -551,12 +580,14 @@
           });
         });
         
-        document.addEventListener('click', function closeOnOutside(e) {
+        // 点击面板外关闭
+        const closeHandler = function(e) {
           if (!panel.contains(e.target) && !e.target.closest('.options')) {
             closePanel();
-            document.removeEventListener('click', closeOnOutside);
+            document.removeEventListener('click', closeHandler);
           }
-        });
+        };
+        document.addEventListener('click', closeHandler);
         
       }, 2000);
     }
@@ -567,10 +598,12 @@
       isPanelOpen = false;
       currentItem = null;
       itemNameEl.classList.remove('visible');
+      // 关闭面板后刷新 raycaster，恢复检测
+      setTimeout(refreshRaycaster, 100);
     }
 
     // ============================================================
-    // A-Frame 凝视组件
+    // A-Frame 凝视组件 - 增加防抖和状态保护
     // ============================================================
     AFRAME.registerComponent('gaze-info', {
       schema: {
@@ -583,23 +616,38 @@
         
         let hoverTimer = null;
         let isHovering = false;
+        let isActivated = false; // 防止重复触发
         
         el.addEventListener('mouseenter', function() {
-          if (isPanelOpen) return;
-          if (completedItems.has(key)) return;
+          // 如果面板已打开、物品已完成、或者已激活，则忽略
+          if (isPanelOpen || completedItems.has(key) || isActivated) return;
+          
           isHovering = true;
           const data = ITEM_DATA[key];
           if (data) {
             itemNameEl.textContent = '✦ ' + data.name;
             itemNameEl.classList.add('visible');
           }
+          
+          // 清除之前的计时器
+          if (hoverTimer) {
+            clearTimeout(hoverTimer);
+            hoverTimer = null;
+          }
+          
           hoverTimer = setTimeout(() => {
-            if (isHovering && !isPanelOpen && !completedItems.has(key)) {
+            if (isHovering && !isPanelOpen && !completedItems.has(key) && !isActivated) {
+              isActivated = true;
               const data = ITEM_DATA[key];
               if (data) {
                 showInfoPanel(key, data);
               }
+              // 重置激活状态（面板关闭时恢复）
+              setTimeout(() => {
+                isActivated = false;
+              }, 500);
             }
+            hoverTimer = null;
           }, 1500);
         });
         
@@ -609,8 +657,9 @@
             clearTimeout(hoverTimer);
             hoverTimer = null;
           }
-          itemNameEl.textContent = '';
+          // 只有面板未打开时才隐藏物品名
           if (!isPanelOpen) {
+            itemNameEl.textContent = '';
             itemNameEl.classList.remove('visible');
           }
         });
@@ -626,7 +675,7 @@
     });
 
     // ============================================================
-    // A-Frame 平滑传送组件
+    // A-Frame 平滑传送组件 - 增加刷新
     // ============================================================
     AFRAME.registerComponent('smooth-teleport', {
       schema: {
@@ -640,32 +689,51 @@
         const data = this.data;
 
         let timer = null;
+        let isTeleporting = false;
 
         el.addEventListener('mouseenter', () => {
+          if (isTeleporting) return;
           timer = setTimeout(() => {
+            isTeleporting = true;
             rig.setAttribute('animation', {
               property: 'position',
               to: `${data.target.x} ${data.target.y} ${data.target.z}`,
               dur: data.dur,
               easing: 'easeInOutQuad'
             });
+            
+            // 播放传送音效
+            const soundSystem = document.querySelector('#sound-system');
+            if (soundSystem) {
+              const teleSound = soundSystem.querySelector('#teleport-sound');
+              if (teleSound) teleSound.components.sound.playSound();
+            }
+            
             setTimeout(() => {
-              const cursor = document.querySelector('[raycaster]');
-              if (cursor && cursor.components && cursor.components.raycaster) {
-                cursor.components.raycaster.refreshObjects();
-              }
+              // 传送完成后刷新 raycaster
+              refreshRaycaster();
+              // 清理物品名显示
               itemNameEl.classList.remove('visible');
               itemNameEl.textContent = '';
-            }, data.dur + 50);
+              isTeleporting = false;
+            }, data.dur + 100);
+            
+            timer = null;
           }, 1000);
         });
 
         el.addEventListener('mouseleave', () => {
-          clearTimeout(timer);
+          if (timer) {
+            clearTimeout(timer);
+            timer = null;
+          }
         });
       }
     });
 
+    // ============================================================
+    // 初始化
+    // ============================================================
     updateAlcoholMeter();
 
     document.addEventListener('DOMContentLoaded', function() {
@@ -673,16 +741,28 @@
       if (scene) {
         scene.addEventListener('loaded', function() {
           console.log('✦ 完整场景已加载 — ' + totalItems + ' 件物品等待探索');
+          // 场景加载完成后初始化 raycaster
+          setTimeout(refreshRaycaster, 500);
         });
       }
     });
 
+    // 每次点击后刷新 raycaster
     document.addEventListener('click', function(e) {
       const soundSystem = document.querySelector('#sound-system');
       if (soundSystem && e.target.closest('.item')) {
         const clickSound = soundSystem.querySelector('#click-sound');
         if (clickSound) clickSound.components.sound.playSound();
       }
+      // 点击任何地方都刷新 raycaster（但不包括面板按钮）
+      if (!e.target.closest('.options') && !e.target.closest('#info-panel')) {
+        setTimeout(refreshRaycaster, 50);
+      }
+    });
+
+    // 窗口变化时刷新
+    window.addEventListener('resize', function() {
+      setTimeout(refreshRaycaster, 200);
     });
 
     console.log('✦ 完整场景已启动 — ' + totalItems + ' 件物品等待探索');
