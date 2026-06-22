@@ -9,6 +9,7 @@
     <!-- 其他原有代码 -->
  
     <style>
+        
         @font-face {
             font-family: 'AkzidenzGrotesk-Extended';
             src: url('AkzidenzGrotesk-Extended.otf') format('opentype');
@@ -419,7 +420,10 @@
     }
 }
 </style>
-    
+    <!-- 神圣背景音乐 -->
+<audio id="bgm" loop preload="auto">
+  <source src="https://incompetech.com/music/royalty-free/mp3-royaltyfree/Gregorian%20Chant.mp3" type="audio/mpeg">
+</audio>
     <script type="importmap">
       {
         "imports": {
@@ -851,6 +855,18 @@ window.addEventListener('click', (event) => {
 
 // 启动打字机故事
 window.addEventListener('load', runStory);
+// 背景音乐控制
+const bgm = document.getElementById('bgm');
+if (bgm) {
+  bgm.volume = 0.25;
+  // 用户点击页面时播放（绕过自动播放限制）
+  document.addEventListener('click', function playBgm() {
+    if (bgm.paused) {
+      bgm.play().catch(() => {});
+    }
+    document.removeEventListener('click', playBgm);
+  }, { once: true });
+}
 
 // 👇 直接从全局环境调用 VR 初始化函数 👇
 if (window.initVRMode) {

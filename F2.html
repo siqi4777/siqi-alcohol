@@ -420,6 +420,10 @@
 }
 </style>
     
+<!-- 神圣背景音乐 -->
+<audio id="bgm" loop preload="auto">
+  <source src="https://incompetech.com/music/royalty-free/mp3-royaltyfree/Agnus%20Dei%20X.mp3" type="audio/mpeg">
+</audio>
     <script type="importmap">
       {
         "imports": {
@@ -769,7 +773,6 @@ sphere.name = "magicSphere"; // 给它起个名字，方便射线检测找到它
 // 1. 定义所有段落
 // 1. 定义所有段落
 const introTexts = [
-    "Summarise the main content of this passage in one sentence. What is the special significance of the Sumerians’ practice of drinking beer together, as mentioned in this passage? What other similar examples of primitive worship can be found in contemporary society?",
     "Strictly speaking, Babylon did not have a wine god associated with wild, excessive drinking, as was the case with Dionysus in Greece. Their ‘wine god’ was a woman—Siduri—who was a ‘sommelier’ and also a goddess of winemaking.",
     "In 《The Epic of Gilgamesh》, the hero Gilgamesh encounters her whilst on his quest for immortality. Seated upon a throne by the sea and wearing a golden veil, she is not merely a cup-bearer but also a wise guide; she attempts to persuade Gilgamesh to abandon his pursuit of the illusory immortality and instead enjoy drinking and merrymaking.",
     "Whether to give up certain things in order to enjoy life."
@@ -851,7 +854,18 @@ window.addEventListener('click', (event) => {
 
 // 启动打字机故事
 window.addEventListener('load', runStory);
-
+// 背景音乐控制
+const bgm = document.getElementById('bgm');
+if (bgm) {
+  bgm.volume = 0.25;
+  // 用户点击页面时播放（绕过自动播放限制）
+  document.addEventListener('click', function playBgm() {
+    if (bgm.paused) {
+      bgm.play().catch(() => {});
+    }
+    document.removeEventListener('click', playBgm);
+  }, { once: true });
+}
 // 👇 直接从全局环境调用 VR 初始化函数 👇
 if (window.initVRMode) {
     window.initVRMode({ viewer: viewer, THREE: THREE });
