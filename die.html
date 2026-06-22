@@ -6,6 +6,12 @@
   <title>A-Frame VR · 传送阵列 + 物品信息 + 音效</title>
   <script src="https://aframe.io/releases/1.0.4/aframe.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/aframe-event-set-component@5.0.0/dist/aframe-event-set-component.min.js"></script>
+  
+  <!-- 神圣背景音乐 -->
+  <audio id="bgm" loop preload="auto">
+    <source src="https://incompetech.com/music/royalty-free/mp3-royaltyfree/Echoes%20of%20Time.mp3" type="audio/mpeg">
+  </audio>
+
   <style>
     body { margin: 0; overflow: hidden; }
     .info { position: absolute; bottom: 20px; left: 0; right: 0; text-align: center; color: rgba(255,255,255,0.8); font-family: sans-serif; font-size: 14px; pointer-events: none; text-shadow: 0 1px 4px rgba(0,0,0,0.5); z-index: 10; }
@@ -56,8 +62,26 @@
   <!-- 信息面板 -->
   <div id="info-panel"></div>
 
-  <div class="controls-hint">You’re dead</div>
+  <div class="controls-hint">You're dead</div>
   <div class="info">These are just your vomit.</div>
-  <script src="script.js"></script>
+
+  <script>
+    // ============================================================
+    // 背景音乐控制
+    // ============================================================
+    const bgm = document.getElementById('bgm');
+    if (bgm) {
+      bgm.volume = 0.2; // 音量 20%，作为氛围铺垫
+      // 用户点击页面时播放（绕过浏览器自动播放限制）
+      document.addEventListener('click', function playBgm() {
+        if (bgm.paused) {
+          bgm.play().catch(() => {});
+        }
+        document.removeEventListener('click', playBgm);
+      }, { once: true });
+    }
+
+    console.log('✦ 背景音乐已准备 — 点击页面任意位置播放');
+  </script>
 </body>
 </html>

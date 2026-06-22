@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
-  <title>VR · 物品哲思 · 完整场景</title>
+  <title>VR · Philosophical Reflections </title>
   <script src="https://aframe.io/releases/1.0.4/aframe.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/aframe-event-set-component@5.0.0/dist/aframe-event-set-component.min.js"></script>
   
@@ -62,6 +62,10 @@
     #completion.visible { opacity: 1; pointer-events: auto; }
     #completion .sub { font-size: 16px; color: #c9b88a; margin-top: 12px; display: block; font-weight: 400; }
   </style>
+  <!-- 神圣背景音乐 -->
+<audio id="bgm" loop preload="auto">
+  <source src="https://incompetech.com/music/royalty-free/mp3-royaltyfree/Deep%20Noise.mp3" type="audio/mpeg">
+</audio>
 </head>
 <body>
   <a-scene
@@ -776,6 +780,18 @@
     });
 
     console.log('✦ 完整场景已启动 — ' + totalItems + ' 件物品等待探索');
+
+    // 背景音乐控制
+const bgm = document.getElementById('bgm');
+if (bgm) {
+  bgm.volume = 0.2;
+  document.addEventListener('click', function playBgm() {
+    if (bgm.paused) {
+      bgm.play().catch(() => {});
+    }
+    document.removeEventListener('click', playBgm);
+  }, { once: true });
+}
 
     document.getElementById('skip-btn').addEventListener('click', function() {
   window.location.href = 'F2.html';
