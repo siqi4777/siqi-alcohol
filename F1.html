@@ -478,8 +478,6 @@
       }
     }
 
-    // 定期刷新 Raycaster（防止动画导致检测失效）
-    setInterval(refreshRaycaster, 3000);
 
     function applyEchoEffect() {
       const soundSystem = document.querySelector('#sound-system');
@@ -619,37 +617,24 @@
         let isActivated = false; // 防止重复触发
         
         el.addEventListener('mouseenter', function() {
-          // 如果面板已打开、物品已完成、或者已激活，则忽略
-          if (isPanelOpen || completedItems.has(key) || isActivated) return;
-          
-          isHovering = true;
-          const data = ITEM_DATA[key];
-          if (data) {
-            itemNameEl.textContent = '✦ ' + data.name;
-            itemNameEl.classList.add('visible');
-          }
-          
-          // 清除之前的计时器
-          if (hoverTimer) {
-            clearTimeout(hoverTimer);
-            hoverTimer = null;
-          }
-          
-          hoverTimer = setTimeout(() => {
-            if (isHovering && !isPanelOpen && !completedItems.has(key) && !isActivated) {
-              isActivated = true;
-              const data = ITEM_DATA[key];
-              if (data) {
-                showInfoPanel(key, data);
-              }
-              // 重置激活状态（面板关闭时恢复）
-              setTimeout(() => {
-                isActivated = false;
-              }, 500);
-            }
-            hoverTimer = null;
-          }, 1500);
-        });
+  if (isPanelOpen || isActivated) return; // 删除了 completedItems.has(key) 的限制
+  isHovering = true;
+  
+  // 即使已完成，也显示物品名字
+  itemNameEl.textContent = ITEM_DATA[key].name;
+  if (completedItems.has(key)) {
+      itemNameEl.textContent += " (已探索)";
+  }
+  itemNameEl.classList.add('visible');
+
+  hoverTimer = setTimeout(() => {
+    // 只有在未完成时，才触发弹窗
+    if (isHovering && !isPanelOpen && !completedItems.has(key)) {
+      isActivated = true;
+      showInfoPanel(key);
+    }
+  }, 1200); // 如果觉得 1.2秒太长容易滑钩，可以改成 800
+});
         
         el.addEventListener('mouseleave', function() {
           isHovering = false;
@@ -737,6 +722,7 @@
     updateAlcoholMeter();
 
     document.addEventListener('DOMContentLoaded', function() {
+      
       const scene = document.querySelector('a-scene');
       if (scene) {
         scene.addEventListener('loaded', function() {
