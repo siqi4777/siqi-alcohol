@@ -285,7 +285,7 @@
     <a-light type="point" position="-12 -3 -12" intensity="0.6" color="#ff8da1" distance="25" decay="0.2"></a-light>
     <a-light type="point" position="12 -3 -12" intensity="0.6" color="#ff8da1" distance="25" decay="0.2"></a-light>
 
-    <!-- CAMERA -->
+    <!-- CAMERA - 关键修改：raycaster 同时检测 .item 和 .clickable -->
     <a-entity id="rig" position="0 1.6 8">
       <a-camera look-controls wasd-controls="acceleration: 100; fly: false; speed: 177">
         <a-cursor
@@ -293,7 +293,7 @@
           fuse-timeout="800"
           geometry="primitive: ring; radiusInner: 0.015; radiusOuter: 0.025"
           material="color: white; shader: flat"
-          raycaster="objects: .item">
+          raycaster="objects: .item, .clickable">
         </a-cursor>
       </a-camera>
     </a-entity>
@@ -320,7 +320,6 @@
   <script>
     // ============================================================
     // 交互数据 - 每个物品的完整叙事配置（英文）
-    // 根据需求完整配置：时间与虚妄、爱与失去、自然与神性
     // ============================================================
     const ITEM_DATA = {
       silverDistiller: {
@@ -605,19 +604,16 @@
         });
         
         el.addEventListener('mouseleave', function() {
-  isHovering = false;
-
-  if (hoverTimer) {
-    clearTimeout(hoverTimer);
-    hoverTimer = null;
-  }
-
-  itemNameEl.textContent = '';
-
-  if (!isPanelOpen) {
-    itemNameEl.classList.remove('visible');
-  }
-});
+          isHovering = false;
+          if (hoverTimer) {
+            clearTimeout(hoverTimer);
+            hoverTimer = null;
+          }
+          itemNameEl.textContent = '';
+          if (!isPanelOpen) {
+            itemNameEl.classList.remove('visible');
+          }
+        });
       }
     });
 
@@ -629,54 +625,46 @@
       }
     });
 
-// ============================================================
-    // A-Frame 平滑传送组件 (修复传送点失效问题)
     // ============================================================
-AFRAME.registerComponent('smooth-teleport', {
-  schema: {
-    target: { type: 'vec3' },
-    dur: { type: 'number', default: 800 }
-  },
+    // A-Frame 平滑传送组件
+    // ============================================================
+    AFRAME.registerComponent('smooth-teleport', {
+      schema: {
+        target: { type: 'vec3' },
+        dur: { type: 'number', default: 800 }
+      },
 
-  init: function () {
-    const el = this.el;
-    const rig = document.querySelector('#rig');
-    const data = this.data;
+      init: function () {
+        const el = this.el;
+        const rig = document.querySelector('#rig');
+        const data = this.data;
 
-    let timer = null;
+        let timer = null;
 
-    el.addEventListener('mouseenter', () => {
-      timer = setTimeout(() => {
-        rig.setAttribute('animation', {
-          property: 'position',
-          to: `${data.target.x} ${data.target.y} ${data.target.z}`,
-          dur: data.dur,
-          easing: 'easeInOutQuad'
+        el.addEventListener('mouseenter', () => {
+          timer = setTimeout(() => {
+            rig.setAttribute('animation', {
+              property: 'position',
+              to: `${data.target.x} ${data.target.y} ${data.target.z}`,
+              dur: data.dur,
+              easing: 'easeInOutQuad'
+            });
+            setTimeout(() => {
+              const cursor = document.querySelector('[raycaster]');
+              if (cursor && cursor.components && cursor.components.raycaster) {
+                cursor.components.raycaster.refreshObjects();
+              }
+              itemNameEl.classList.remove('visible');
+              itemNameEl.textContent = '';
+            }, data.dur + 50);
+          }, 1000);
         });
-setTimeout(() => {
-  const cursor =
-    document.querySelector('[raycaster]');
 
-  if (
-    cursor &&
-    cursor.components &&
-    cursor.components.raycaster
-  ) {
-    cursor.components.raycaster.refreshObjects();
-  }
-
-  itemNameEl.classList.remove('visible');
-  itemNameEl.textContent = '';
-}, data.dur + 50);
-
-      }, 1000);
+        el.addEventListener('mouseleave', () => {
+          clearTimeout(timer);
+        });
+      }
     });
-
-    el.addEventListener('mouseleave', () => {
-      clearTimeout(timer);
-    });
-  }
-});
 
     updateAlcoholMeter();
 
